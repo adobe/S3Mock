@@ -43,7 +43,7 @@ data class Grant(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String?): Permission? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+      fun fromValue(value: String?): Permission? = enumFromName<Permission>(value)
     }
   }
 }

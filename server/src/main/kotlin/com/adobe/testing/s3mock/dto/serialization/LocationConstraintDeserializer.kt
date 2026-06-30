@@ -19,13 +19,11 @@ import com.adobe.testing.s3mock.dto.LocationConstraint
 import tools.jackson.core.JsonParser
 import tools.jackson.databind.DeserializationContext
 import tools.jackson.databind.ValueDeserializer
-import java.io.IOException
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
  */
 class LocationConstraintDeserializer : ValueDeserializer<LocationConstraint?>() {
-  @Throws(IOException::class)
   override fun deserialize(
     p: JsonParser,
     ctxt: DeserializationContext?,

@@ -43,6 +43,6 @@ enum class StorageClass {
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String?): StorageClass? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): StorageClass? = enumFromName<StorageClass>(value)
   }
 }

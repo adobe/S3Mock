@@ -44,7 +44,7 @@ data class LegalHold(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String?): Status? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+      fun fromValue(value: String?): Status? = enumFromName<Status>(value)
     }
   }
 }

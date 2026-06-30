@@ -17,3 +17,6 @@ package com.adobe.testing.s3mock.dto
 
 /** AWS S3 XML namespace URI, declared once and referenced everywhere via [S3_NS]. */
 const val S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"
+
+/** ISO-8601 date-time format with milliseconds used in S3 XML responses. */
+const val S3_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"

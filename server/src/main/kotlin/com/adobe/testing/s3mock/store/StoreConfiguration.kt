@@ -17,6 +17,7 @@
 package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.dto.ObjectOwnership
+import com.adobe.testing.s3mock.dto.S3_DATE_FORMAT
 import com.adobe.testing.s3mock.store.BucketStore.Companion.BUCKET_META_FILE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -168,7 +169,7 @@ class StoreConfiguration {
     private val LOG: Logger = LoggerFactory.getLogger(StoreConfiguration::class.java)
     val S3_OBJECT_DATE_FORMAT: DateTimeFormatter =
       DateTimeFormatter
-        .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .ofPattern(S3_DATE_FORMAT)
         .withZone(ZoneId.of("UTC"))
   }
 }

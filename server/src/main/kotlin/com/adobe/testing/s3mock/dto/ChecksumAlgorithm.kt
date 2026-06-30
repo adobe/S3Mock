@@ -52,7 +52,7 @@ enum class ChecksumAlgorithm {
 
   companion object {
     @JsonCreator
-    fun fromString(value: String?): ChecksumAlgorithm? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+    fun fromString(value: String?): ChecksumAlgorithm? = enumFromName<ChecksumAlgorithm>(value)
 
     fun fromHeader(value: String?): ChecksumAlgorithm? =
       when (value) {

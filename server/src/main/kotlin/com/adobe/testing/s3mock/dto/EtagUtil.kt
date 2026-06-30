@@ -24,17 +24,7 @@ object EtagUtil {
    * [RFC7232](https://www.rfc-editor.org/rfc/rfc7232)
    */
   fun normalizeEtag(etag: String?): String? =
-    when {
-      etag == null -> {
-        null
-      }
-
-      etag.startsWith("\"") && etag.endsWith("\"") -> {
-        etag
-      }
-
-      else -> {
-        "\"$etag\""
-      }
+    etag?.let {
+      if (it.startsWith("\"") && it.endsWith("\"")) it else "\"$it\""
     }
 }

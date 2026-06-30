@@ -30,7 +30,7 @@ data class MultipartUpload(
   val checksumAlgorithm: ChecksumAlgorithm?,
   @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
   @param:JsonProperty("Initiated", namespace = S3_NS)
   val initiated: Instant?,
   @param:JsonProperty("Initiator", namespace = S3_NS)

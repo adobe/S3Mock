@@ -33,6 +33,6 @@ enum class Mode {
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String?): Mode? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): Mode? = enumFromName<Mode>(value)
   }
 }

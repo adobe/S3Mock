@@ -27,7 +27,7 @@ import java.time.Instant
 data class RestoreStatus(
   @param:JsonProperty("IsRestoreInProgress", namespace = S3_NS)
   val isRestoreInProgress: Boolean?,
-  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
   @param:JsonProperty("RestoreExpiryDate", namespace = S3_NS)
   val restoreExpiryDate: Instant?,
 )

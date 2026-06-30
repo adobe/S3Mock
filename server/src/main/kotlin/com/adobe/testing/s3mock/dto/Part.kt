@@ -32,7 +32,7 @@ data class Part(
   @param:JsonDeserialize(using = EtagDeserializer::class)
   @get:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
-  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
   @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: Instant,
   @param:JsonProperty("Size", namespace = S3_NS)

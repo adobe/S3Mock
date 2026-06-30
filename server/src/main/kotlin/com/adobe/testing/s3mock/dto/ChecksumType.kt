@@ -33,6 +33,6 @@ enum class ChecksumType {
 
   companion object {
     @JsonCreator
-    fun fromString(value: String?): ChecksumType? = entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+    fun fromString(value: String?): ChecksumType? = enumFromName<ChecksumType>(value)
   }
 }

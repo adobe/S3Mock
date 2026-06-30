@@ -19,14 +19,12 @@ import com.adobe.testing.s3mock.dto.Region
 import tools.jackson.core.JsonGenerator
 import tools.jackson.databind.SerializationContext
 import tools.jackson.databind.ValueSerializer
-import java.io.IOException
 
 /**
  * Serialize AWS Region objects.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax)
  */
 class RegionSerializer : ValueSerializer<Region>() {
-  @Throws(IOException::class)
   override fun serialize(
     value: Region,
     gen: JsonGenerator,

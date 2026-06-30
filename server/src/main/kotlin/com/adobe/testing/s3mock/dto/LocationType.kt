@@ -34,6 +34,6 @@ enum class LocationType(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String?): LocationType? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): LocationType? = enumFromValue<LocationType>(value) { it.value }
   }
 }

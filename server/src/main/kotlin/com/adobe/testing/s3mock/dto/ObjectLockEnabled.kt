@@ -33,6 +33,6 @@ enum class ObjectLockEnabled(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String?): ObjectLockEnabled? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): ObjectLockEnabled? = enumFromValue<ObjectLockEnabled>(value) { it.value }
   }
 }

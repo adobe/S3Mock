@@ -26,7 +26,7 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 data class Transition(
-  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
   @param:JsonProperty("Date", namespace = S3_NS)
   val date: Instant?,
   @param:JsonProperty("Days", namespace = S3_NS)

@@ -34,6 +34,6 @@ enum class DataRedundancy(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String?): DataRedundancy? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): DataRedundancy? = enumFromValue<DataRedundancy>(value) { it.value }
   }
 }

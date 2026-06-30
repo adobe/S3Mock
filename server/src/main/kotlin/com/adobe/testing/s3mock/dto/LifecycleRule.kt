@@ -61,7 +61,7 @@ data class LifecycleRule(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String?): Status? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+      fun fromValue(value: String?): Status? = enumFromValue<Status>(value) { it.value }
     }
   }
 }
