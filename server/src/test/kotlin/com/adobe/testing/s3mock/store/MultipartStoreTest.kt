@@ -107,7 +107,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           .isDirectory()
       }
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   @Test
@@ -156,7 +156,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         ).toFile(),
     ).exists()
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   @Test
@@ -675,7 +675,7 @@ internal class MultipartStoreTest : StoreTestBase() {
       assertThat(it[1]).isEqualTo(expectedPart2)
     }
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   private fun prepareExpectedPart(
@@ -993,7 +993,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).hasSize(1)
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
 
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).isEmpty()
     assertThat(
@@ -1095,7 +1095,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           "$partNumber.part",
         ).toFile(),
     ).exists()
-    multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId)
+    multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), uploadId)
   }
 
   @Test
@@ -1167,7 +1167,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           "$partNumber.part",
         ).toFile(),
     ).exists()
-    multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId)
+    multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
   }
 
   @Test
@@ -1277,7 +1277,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     BUCKET_NAMES.forEach { bucket ->
       val bucketMetadata = metadataFrom(bucket)
       multipartStore.listMultipartUploads(bucketMetadata, NO_PREFIX).forEach {
-        multipartStore.abortMultipartUpload(bucketMetadata, UUID.randomUUID(), UUID.fromString(it.uploadId))
+        multipartStore.abortMultipartUpload(bucketMetadata, UUID.fromString(it.uploadId))
       }
     }
   }

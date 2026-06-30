@@ -458,7 +458,7 @@ class MultipartController(
           checksumFrom(httpHeaders),
           checksumTypeFrom(httpHeaders),
           checksumAlgorithmFromHeader(httpHeaders),
-        )!!
+        ) ?: throw S3Exception.NO_SUCH_UPLOAD_MULTIPART
       } else {
         CompleteMultipartUploadResult.from(
           locationWithEncodedKey,
