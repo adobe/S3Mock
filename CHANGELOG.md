@@ -154,6 +154,8 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * fix: `x-amz-delete-marker: true` is now correctly returned when deleting a versioned object that is itself a delete marker (previously returned `false`).
   * fix: `bucket-owner-full-control` canned ACL now correctly grants `FULL_CONTROL` to the bucket owner (was incorrectly granting `READ`, same as `bucket-owner-read`).
+  * fix: `ListObjectVersions` no longer skips objects whose key contains characters requiring URL-encoding — a decoding mismatch caused their version metadata lookup to fail, returning an empty version list for those keys.
+  * fix: `CompleteMultipartUpload` now returns a proper `NoSuchUpload` S3 error instead of an internal server error when the upload result cannot be resolved.
   * feat: Persist per-part checksums uploaded via `UploadPart` as `.partmeta.json` sidecar files so that `CompleteMultipartUpload` can pass without clients re-sending per-part checksums for `FULL_OBJECT` type uploads. ([#3034](https://github.com/adobe/S3Mock/issues/3034))
   * feat: Expose per-part checksum metadata via `ListParts` (returned in each `Part` element) and `GetObjectAttributes` (`ObjectParts` attribute).
   * feat: Correctly model the S3 checksum type support matrix — `COMPOSITE` requires per-part checksums in `CompleteMultipartUpload`; `FULL_OBJECT` does not.
