@@ -63,7 +63,7 @@ class ObjectRetentionController(
   ): ResponseEntity<Retention> {
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
-    val s3ObjectMetadata = objectService.verifyObjectLockConfiguration(bucketName, key.key, versionId)
+    val s3ObjectMetadata = objectService.verifyRetentionExists(bucketName, key.key, versionId)
 
     return ResponseEntity
       .ok()

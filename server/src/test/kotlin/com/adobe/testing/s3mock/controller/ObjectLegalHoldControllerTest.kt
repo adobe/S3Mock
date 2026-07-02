@@ -75,7 +75,7 @@ internal class ObjectLegalHoldControllerTest : BaseControllerTest() {
         legalHold = legalHold,
       )
     whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
-    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null)).thenReturn(metadata)
+    whenever(objectService.verifyLegalHoldExists("test-bucket", key, null)).thenReturn(metadata)
 
     val uri =
       UriComponentsBuilder

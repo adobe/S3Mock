@@ -77,7 +77,7 @@ internal class ObjectRetentionControllerTest : BaseControllerTest() {
         UUID.randomUUID().toString(),
         retention = retention,
       )
-    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null))
+    whenever(objectService.verifyRetentionExists("test-bucket", key, null))
       .thenReturn(s3ObjectMetadata)
 
     val uri =

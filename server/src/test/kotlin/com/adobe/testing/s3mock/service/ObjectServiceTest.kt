@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.S3Exception.Companion.INVALID_TAG
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
+import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
@@ -330,13 +331,73 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   @Test
-  fun testVerifyObjectLockConfiguration_failure() {
+  fun testVerifyLegalHoldExists_failure() {
     val bucketName = "bucket"
     val prefix = ""
     val key = "key"
     givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
-    assertThatThrownBy { iut.verifyObjectLockConfiguration(bucketName, key, null) }
+    assertThatThrownBy { iut.verifyLegalHoldExists(bucketName, key, null) }
       .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyLegalHoldExists_onlyRetentionSet_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plus(1, ChronoUnit.DAYS))
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(retention = retention))
+    assertThatThrownBy { iut.verifyLegalHoldExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    assertThatThrownBy { iut.verifyRetentionExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_onlyLegalHoldSet_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(legalHold = legalHold))
+    assertThatThrownBy { iut.verifyRetentionExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyLegalHoldExists_success() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(legalHold = legalHold))
+    assertThat(iut.verifyLegalHoldExists(bucketName, key, null).legalHold).isEqualTo(legalHold)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_success() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plus(1, ChronoUnit.DAYS))
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(retention = retention))
+    assertThat(iut.verifyRetentionExists(bucketName, key, null).retention).isEqualTo(retention)
   }
 
   @Test

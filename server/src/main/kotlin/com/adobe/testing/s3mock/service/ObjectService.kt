@@ -417,15 +417,23 @@ open class ObjectService(
     return s3ObjectMetadata
   }
 
-  fun verifyObjectLockConfiguration(
+  fun verifyLegalHoldExists(
     bucketName: String,
     key: String,
     versionId: String?,
   ): S3ObjectMetadata {
     val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
-    val noLegalHold = s3ObjectMetadata.legalHold == null
-    val noRetention = s3ObjectMetadata.retention == null
-    if (noLegalHold && noRetention) throw S3Exception.NOT_FOUND_OBJECT_LOCK
+    if (s3ObjectMetadata.legalHold == null) throw S3Exception.NOT_FOUND_OBJECT_LOCK
+    return s3ObjectMetadata
+  }
+
+  fun verifyRetentionExists(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): S3ObjectMetadata {
+    val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
+    if (s3ObjectMetadata.retention == null) throw S3Exception.NOT_FOUND_OBJECT_LOCK
     return s3ObjectMetadata
   }
 

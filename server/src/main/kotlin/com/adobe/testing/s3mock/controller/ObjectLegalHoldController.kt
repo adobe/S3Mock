@@ -65,7 +65,7 @@ class ObjectLegalHoldController(
     val bucket = bucketService.verifyBucketExists(bucketName)
     bucketService.verifyBucketObjectLockEnabled(bucketName)
     val s3ObjectMetadata =
-      objectService.verifyObjectLockConfiguration(
+      objectService.verifyLegalHoldExists(
         bucketName,
         key.key,
         versionId,
