@@ -19,6 +19,7 @@ import com.adobe.testing.s3mock.dto.Tag
 import com.ctc.wstx.api.WstxOutputProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test
 import tools.jackson.dataformat.xml.XmlMapper
 import tools.jackson.dataformat.xml.XmlReadFeature
@@ -70,6 +71,16 @@ internal class TaggingHeaderConverterTest {
         Tag(tag(3)),
         Tag(tag(4)),
       )
+  }
+
+  @Test
+  fun `rejects tag fragment without equals sign`() {
+    assertThatIllegalArgumentException().isThrownBy { iut.convert("invalidfragment") }
+  }
+
+  @Test
+  fun `rejects tag fragment without equals sign among valid ones`() {
+    assertThatIllegalArgumentException().isThrownBy { iut.convert("${tag(0)}&invalidfragment") }
   }
 
   private companion object {

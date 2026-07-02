@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store
+package com.adobe.testing.s3mock.model
 
 import com.adobe.testing.s3mock.dto.BucketInfo
 import com.adobe.testing.s3mock.dto.BucketLifecycleConfiguration
@@ -45,28 +45,13 @@ data class BucketMetadata(
   private val _objects: MutableMap<String, UUID> = mutableMapOf(),
 ) {
   val objects: Map<String, UUID>
-    get() = java.util.Collections.unmodifiableMap(_objects)
+    get() = _objects.toMap()
 
-  fun addKey(key: String): UUID {
-    val existing = _objects[key]
-    if (existing != null) return existing
-    val uuid = UUID.randomUUID()
-    _objects[key] = uuid
-    return uuid
-  }
+  fun addKey(key: String): UUID = _objects.getOrPut(key) { UUID.randomUUID() }
 
   fun removeKey(key: String): Boolean = _objects.remove(key) != null
 
   fun getID(key: String): UUID? = _objects[key]
-
-  fun withVersioningConfiguration(versioningConfiguration: VersioningConfiguration): BucketMetadata =
-    this.copy(versioningConfiguration = versioningConfiguration)
-
-  fun withObjectLockConfiguration(objectLockConfiguration: ObjectLockConfiguration): BucketMetadata =
-    this.copy(objectLockConfiguration = objectLockConfiguration)
-
-  fun withBucketLifecycleConfiguration(bucketLifecycleConfiguration: BucketLifecycleConfiguration?): BucketMetadata =
-    this.copy(bucketLifecycleConfiguration = bucketLifecycleConfiguration)
 
   @get:JsonIgnore
   val isVersioningEnabled: Boolean

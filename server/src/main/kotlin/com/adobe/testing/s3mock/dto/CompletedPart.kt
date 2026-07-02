@@ -16,50 +16,49 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC32C
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.CRC64NVME
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA1
+import com.adobe.testing.s3mock.dto.ChecksumAlgorithm.SHA256
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompletedPart.html).
  */
 @S3Verified(year = 2025)
-class CompletedPart(
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+data class CompletedPart(
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String?,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String?,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String?,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String?,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
-  @param:JsonProperty("PartNumber", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = S3_NS)
+  val etag: String?,
+  @param:JsonProperty("PartNumber", namespace = S3_NS)
   val partNumber: Int,
 ) {
-  @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
-
   constructor(
     checksumAlgorithm: ChecksumAlgorithm?,
     checksum: String?,
     etag: String?,
     partNumber: Int,
   ) : this(
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA1) checksum else null,
-    if (checksumAlgorithm == ChecksumAlgorithm.SHA256) checksum else null,
+    checksumAlgorithm.ifAlgorithm(CRC32, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC32C, checksum),
+    checksumAlgorithm.ifAlgorithm(CRC64NVME, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA1, checksum),
+    checksumAlgorithm.ifAlgorithm(SHA256, checksum),
     etag,
     partNumber,
   )

@@ -29,7 +29,6 @@ import com.adobe.testing.s3mock.dto.Owner
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl)
  */
 object CannedAclUtil {
-  @JvmStatic
   fun policyForCannedAcl(cannedAcl: ObjectCannedACL): AccessControlPolicy =
     when (cannedAcl) {
       ObjectCannedACL.PRIVATE -> privateAcl()
@@ -57,7 +56,7 @@ object CannedAclUtil {
           "s3-mock-file-store",
           Owner.DEFAULT_OWNER_BUCKET.id,
         ),
-        Grant.Permission.READ,
+        Grant.Permission.FULL_CONTROL,
       ),
     )
 

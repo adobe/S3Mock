@@ -18,9 +18,6 @@ package com.adobe.testing.s3mock.its
 import aws.smithy.kotlin.runtime.net.url.Url
 import com.ctc.wstx.api.WstxOutputProperties
 import com.fasterxml.jackson.annotation.JsonInclude
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInfo
@@ -93,12 +90,15 @@ import kotlin.random.Random
 internal abstract class S3TestBase {
   private val s3Client = createS3Client()
 
-  protected fun createHttpClient(): CloseableHttpClient =
-    HttpClientBuilder
-      .create()
-      .setSSLContext(createBlindlyTrustingSslContext())
-      .setDefaultRequestConfig(RequestConfig.custom().setExpectContinueEnabled(true).build())
-      .build()
+  protected fun createHttpClient(): java.net.http.HttpClient =
+    java.net.http.HttpClient
+      .newBuilder()
+      .sslContext(createBlindlyTrustingSslContext())
+      .sslParameters(
+        javax.net.ssl.SSLParameters().apply {
+          endpointIdentificationAlgorithm = ""
+        },
+      ).build()
 
   protected fun createS3Client(
     endpoint: String = serviceEndpoint,
@@ -276,12 +276,16 @@ internal abstract class S3TestBase {
   @AfterEach
   fun cleanupStores() {
     s3Client.listBuckets().buckets().forEach { bucket ->
-      // Empty all buckets
-      deleteMultipartUploads(bucket)
-      deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
-      // Delete all "non-initial" buckets.
-      if (bucket.name() !in INITIAL_BUCKET_NAMES) {
-        deleteBucket(bucket)
+      try {
+        // Empty all buckets
+        deleteMultipartUploads(bucket)
+        deleteObjectsInBucket(bucket, isObjectLockEnabled(bucket))
+        // Delete all "non-initial" buckets.
+        if (bucket.name() !in INITIAL_BUCKET_NAMES) {
+          deleteBucket(bucket)
+        }
+      } catch (e: Exception) {
+        LOG.warn("Could not clean up bucket {}: {}", bucket.name(), e.message)
       }
     }
     cleanupVectorBuckets()
@@ -590,9 +594,9 @@ internal abstract class S3TestBase {
       )
       sc
     } catch (e: NoSuchAlgorithmException) {
-      throw RuntimeException("Unexpected exception", e)
+      throw IllegalStateException("Unexpected exception", e)
     } catch (e: KeyManagementException) {
-      throw RuntimeException("Unexpected exception", e)
+      throw IllegalStateException("Unexpected exception", e)
     }
 
   fun randomInputStream(size: Int): InputStream {

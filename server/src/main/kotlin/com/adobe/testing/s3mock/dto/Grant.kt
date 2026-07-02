@@ -23,28 +23,27 @@ import com.fasterxml.jackson.annotation.JsonValue
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Grant.html).
  */
-@JsonRootName("Grant", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("Grant", namespace = S3_NS)
 data class Grant(
-  @param:JsonProperty("Grantee", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Grantee", namespace = S3_NS)
   val grantee: Grantee?,
-  @param:JsonProperty("Permission", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Permission", namespace = S3_NS)
   val permission: Permission?,
 ) {
-  enum class Permission(
-    @get:JsonValue private val value: String,
-  ) {
-    FULL_CONTROL("FULL_CONTROL"),
-    WRITE("WRITE"),
-    WRITE_ACP("WRITE_ACP"),
-    READ("READ"),
-    READ_ACP("READ_ACP"),
+  enum class Permission {
+    FULL_CONTROL,
+    WRITE,
+    WRITE_ACP,
+    READ,
+    READ_ACP,
     ;
 
-    override fun toString(): String = value
+    @JsonValue
+    override fun toString(): String = name
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): Permission? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): Permission? = enumFromName<Permission>(value)
     }
   }
 }

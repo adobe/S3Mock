@@ -23,6 +23,7 @@ import com.adobe.testing.s3mock.dto.ObjectLockConfiguration
 import com.adobe.testing.s3mock.dto.ObjectLockEnabled.ENABLED
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
+import com.adobe.testing.s3mock.model.BucketMetadata
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tools.jackson.databind.ObjectMapper
@@ -33,6 +34,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -50,11 +53,13 @@ open class BucketStore(
    * This map stores one lock object per Bucket name.
    * Any method modifying the underlying file must aquire the lock object before the modification.
    */
-  private val lockStore: MutableMap<String, Any> = ConcurrentHashMap<String, Any>()
+  private val lockStore: MutableMap<String, Any> = ConcurrentHashMap()
+
+  private fun lockFor(name: String): Any = lockStore.computeIfAbsent(name) { Any() }
 
   fun listBuckets(): List<BucketMetadata> =
     findBucketPaths()
-      .filter { it.resolve(BUCKET_META_FILE).toFile().exists() }
+      .filter { it.resolve(BUCKET_META_FILE).exists() }
       .map { it.fileName.toString() }
       .map { getBucketMetadata(it) }
 
@@ -62,26 +67,24 @@ open class BucketStore(
     try {
       check(doesBucketExist(bucketName)) { "Bucket does not exist: $bucketName" }
       val metaFilePath = getMetaFilePath(bucketName)
-      synchronized(lockStore[bucketName]!!) {
-        return objectMapper.readValue(metaFilePath.toFile(), BucketMetadata::class.java)
+      return synchronized(lockFor(bucketName)) {
+        objectMapper.readValue(metaFilePath.toFile(), BucketMetadata::class.java)
       }
     } catch (e: IOException) {
       throw IllegalStateException("Could not read bucket metadata-file $bucketName", e)
     }
   }
 
-  @Synchronized
   fun addKeyToBucket(
     key: String,
     bucketName: String,
-  ): UUID {
-    synchronized(lockStore[bucketName]!!) {
+  ): UUID =
+    synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val uuid = bucketMetadata.addKey(key)
       writeToDisk(bucketMetadata)
-      return uuid
+      uuid
     }
-  }
 
   fun lookupIdsInBucket(
     prefix: String?,
@@ -99,7 +102,7 @@ open class BucketStore(
     extract: (Map.Entry<String, UUID>) -> R,
   ): List<R> {
     val normalizedPrefix = prefix ?: ""
-    synchronized(lockStore[bucketName]!!) {
+    synchronized(lockFor(bucketName)) {
       return getBucketMetadata(bucketName)
         .objects
         .entries
@@ -108,18 +111,16 @@ open class BucketStore(
     }
   }
 
-  @Synchronized
   fun removeFromBucket(
     key: String,
     bucketName: String,
-  ): Boolean {
-    synchronized(lockStore.get(bucketName)!!) {
+  ): Boolean =
+    synchronized(lockFor(bucketName)) {
       val bucketMetadata = getBucketMetadata(bucketName)
       val removed = bucketMetadata.removeKey(key)
       writeToDisk(bucketMetadata)
-      return removed
+      removed
     }
-  }
 
   private fun findBucketPaths(): List<Path> =
     try {
@@ -140,8 +141,7 @@ open class BucketStore(
     locationInfo: LocationInfo?,
   ): BucketMetadata {
     check(!doesBucketExist(bucketName)) { "Bucket already exists." }
-    lockStore.putIfAbsent(bucketName, Any())
-    synchronized(lockStore[bucketName]!!) {
+    return synchronized(lockFor(bucketName)) {
       val bucketFolder = createBucketFolder(bucketName)
       val region = bucketRegion ?: this.region
 
@@ -159,7 +159,7 @@ open class BucketStore(
           locationInfo,
         )
       writeToDisk(newBucketMetadata)
-      return newBucketMetadata
+      newBucketMetadata
     }
   }
 
@@ -170,7 +170,7 @@ open class BucketStore(
    */
   fun doesBucketExist(bucketName: String): Boolean {
     val metaFilePath = getMetaFilePath(bucketName)
-    return metaFilePath.toFile().exists()
+    return metaFilePath.exists()
   }
 
   fun isObjectLockEnabled(bucketName: String): Boolean {
@@ -182,8 +182,8 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: ObjectLockConfiguration,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withObjectLockConfiguration(configuration))
+    synchronized(lockFor(metadata.name)) {
+      writeToDisk(metadata.copy(objectLockConfiguration = configuration))
     }
   }
 
@@ -191,8 +191,8 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: VersioningConfiguration,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withVersioningConfiguration(configuration))
+    synchronized(lockFor(metadata.name)) {
+      writeToDisk(metadata.copy(versioningConfiguration = configuration))
     }
   }
 
@@ -200,8 +200,8 @@ open class BucketStore(
     metadata: BucketMetadata,
     configuration: BucketLifecycleConfiguration?,
   ) {
-    synchronized(lockStore[metadata.name]!!) {
-      writeToDisk(metadata.withBucketLifecycleConfiguration(configuration))
+    synchronized(lockFor(metadata.name)) {
+      writeToDisk(metadata.copy(bucketLifecycleConfiguration = configuration))
     }
   }
 
@@ -210,22 +210,16 @@ open class BucketStore(
     return getBucketMetadata(bucketName).objects.isEmpty()
   }
 
-  fun deleteBucket(bucketName: String): Boolean {
-    try {
-      synchronized(lockStore.get(bucketName)!!) {
-        return if (isBucketEmpty(bucketName)) {
-          val bucketMetadata = getBucketMetadata(bucketName)
-          bucketMetadata.path.toFile().deleteRecursively()
-          lockStore.remove(bucketName)
-          true
-        } else {
-          false
-        }
+  fun deleteBucket(bucketName: String): Boolean =
+    synchronized(lockFor(bucketName)) {
+      if (isBucketEmpty(bucketName)) {
+        val bucketMetadata = getBucketMetadata(bucketName)
+        bucketMetadata.path.toFile().deleteRecursively()
+        true
+      } else {
+        false
       }
-    } catch (e: IOException) {
-      throw IllegalStateException("Can't delete bucket directory!", e)
     }
-  }
 
   /**
    * Used to load metadata for all buckets when S3Mock starts.
@@ -234,8 +228,7 @@ open class BucketStore(
     val objectIds = mutableListOf<UUID>()
     for (bucketName in bucketNames) {
       LOG.info("Loading existing bucket {}.", bucketName)
-      lockStore.putIfAbsent(bucketName, Any())
-      synchronized(lockStore[bucketName]!!) {
+      synchronized(lockFor(bucketName)) {
         val bucketMetadata = getBucketMetadata(bucketName)
         for ((key, value) in bucketMetadata.objects.entries) {
           objectIds += value
@@ -249,7 +242,7 @@ open class BucketStore(
   private fun writeToDisk(bucketMetadata: BucketMetadata) {
     try {
       val metaFile = getMetaFilePath(bucketMetadata.name).toFile()
-      synchronized(lockStore[bucketMetadata.name]!!) {
+      synchronized(lockFor(bucketMetadata.name)) {
         objectMapper.writeValue(metaFile, bucketMetadata)
       }
     } catch (e: IOException) {
@@ -266,9 +259,7 @@ open class BucketStore(
 
   private fun createBucketFolder(bucketName: String): File {
     try {
-      val bucketFolder = getBucketFolderPath(bucketName).toFile()
-      bucketFolder.mkdirs()
-      return bucketFolder
+      return getBucketFolderPath(bucketName).createDirectories().toFile()
     } catch (e: IOException) {
       throw IllegalStateException("Can't create bucket directory!", e)
     }

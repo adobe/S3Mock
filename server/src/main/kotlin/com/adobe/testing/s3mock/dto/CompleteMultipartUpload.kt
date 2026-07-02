@@ -26,6 +26,6 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 @S3Verified(year = 2025)
 data class CompleteMultipartUpload(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Part", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Part", namespace = S3_NS)
   val parts: List<CompletedPart>,
 )

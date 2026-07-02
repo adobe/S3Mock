@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.InstantDeserializer
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.databind.annotation.JsonDeserialize
-import tools.jackson.databind.annotation.JsonSerialize
 import java.time.Instant
 
 /**
@@ -28,12 +29,12 @@ import java.time.Instant
  * Milliseconds, like everywhere else.
  */
 @S3Verified(year = 2025)
-@JsonRootName("Retention", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("Retention", namespace = S3_NS)
 data class Retention(
-  @param:JsonProperty("Mode", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Mode", namespace = S3_NS)
   val mode: Mode?,
-  @param:JsonSerialize(using = InstantSerializer::class)
   @param:JsonDeserialize(using = InstantDeserializer::class)
-  @param:JsonProperty("RetainUntilDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
+  @param:JsonProperty("RetainUntilDate", namespace = S3_NS)
   val retainUntilDate: Instant?,
 )

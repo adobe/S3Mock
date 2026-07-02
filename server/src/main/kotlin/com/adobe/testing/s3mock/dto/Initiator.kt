@@ -23,9 +23,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Initiator(
-  @param:JsonProperty("DisplayName", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("DisplayName", namespace = S3_NS)
   val displayName: String?,
-  @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ID", namespace = S3_NS)
   val id: String?,
 ) {
   companion object {

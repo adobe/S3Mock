@@ -104,10 +104,10 @@
         <executions>
           <execution>
             <id>parse-version</id>
-            <phase>validate</phase>
             <goals>
               <goal>parse-version</goal>
             </goals>
+            <phase>validate</phase>
           </execution>
         </executions>
       </plugin>

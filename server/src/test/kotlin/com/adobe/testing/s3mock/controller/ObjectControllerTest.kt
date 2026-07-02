@@ -16,20 +16,11 @@
 package com.adobe.testing.s3mock.controller
 
 import com.adobe.testing.s3mock.S3Exception
-import com.adobe.testing.s3mock.dto.AccessControlPolicy
-import com.adobe.testing.s3mock.dto.CanonicalUser
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
 import com.adobe.testing.s3mock.dto.DeletedS3Object
-import com.adobe.testing.s3mock.dto.GetObjectAttributesOutput
-import com.adobe.testing.s3mock.dto.Grant
-import com.adobe.testing.s3mock.dto.LegalHold
-import com.adobe.testing.s3mock.dto.Mode
-import com.adobe.testing.s3mock.dto.ObjectPart
 import com.adobe.testing.s3mock.dto.Owner
-import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
@@ -43,6 +34,7 @@ import com.adobe.testing.s3mock.store.KmsKeyStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.util.AwsHttpParameters
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -79,7 +71,19 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 
-@MockitoBean(types = [KmsKeyStore::class, MultipartService::class, BucketController::class, MultipartController::class])
+@MockitoBean(
+  types = [
+    KmsKeyStore::class,
+    MultipartService::class,
+    BucketController::class,
+    MultipartController::class,
+    ObjectAclController::class,
+    ObjectTaggingController::class,
+    ObjectLegalHoldController::class,
+    ObjectRetentionController::class,
+    ObjectAttributesController::class,
+  ],
+)
 @WebMvcTest(
   controllers = [ObjectController::class],
   properties = ["com.adobe.testing.s3mock.store.region=us-east-1"],
@@ -114,7 +118,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
 
@@ -163,7 +167,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<HttpHeaders>(),
       ),
     ).thenReturn(
-      tempFile to DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+      tempFile to ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
     )
 
     whenever(
@@ -213,7 +217,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
 
@@ -277,7 +281,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     ).thenReturn(
       Pair(
         tempFile,
-        DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
+        ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32),
       ),
     )
     whenever(
@@ -412,202 +416,6 @@ internal class ObjectControllerTest : BaseControllerTest() {
   }
 
   @Test
-  fun testGetObjectAcl_Ok() {
-    givenBucket()
-    val key = "name"
-
-    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
-    val grantee = CanonicalUser(null, owner.id)
-    val policy =
-      AccessControlPolicy(
-        listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
-        owner,
-      )
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-    whenever(objectService.getAcl("test-bucket", key, null)).thenReturn(policy)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.ACL, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML),
-      ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(policy)))
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testPutObjectAcl_Ok() {
-    givenBucket()
-    val key = "name"
-
-    val owner = Owner("75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a")
-    val grantee = CanonicalUser(null, owner.id)
-    val policy =
-      AccessControlPolicy(
-        listOf(Grant(grantee, Grant.Permission.FULL_CONTROL)),
-        owner,
-      )
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.ACL, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        put(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML)
-          .content(MAPPER.writeValueAsString(policy)),
-      ).andExpect(status().isOk)
-    verify(objectService).setAcl("test-bucket", key, null, policy)
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testGetObjectTagging_Ok() {
-    givenBucket()
-    val key = "name"
-    val tagging =
-      Tagging(
-        TagSet(
-          listOf(
-            Tag("key1", "value1"),
-            Tag("key2", "value2"),
-          ),
-        ),
-      )
-    val s3ObjectMetadata =
-      s3ObjectMetadata(
-        key,
-        UUID.randomUUID().toString(),
-        tags = tagging.tagSet.tags,
-      )
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.TAGGING, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML),
-      ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(tagging)))
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testPutObjectTagging_Ok() {
-    givenBucket()
-    val key = "name"
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-    val tagging =
-      Tagging(
-        TagSet(
-          listOf(
-            Tag("key1", "value1"),
-            Tag("key2", "value2"),
-          ),
-        ),
-      )
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.TAGGING, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        put(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML)
-          .content(MAPPER.writeValueAsString(tagging)),
-      ).andExpect(status().isOk)
-
-    verify(objectService).setTags("test-bucket", key, null, tagging.tagSet.tags)
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testGetObjectRetention_Ok() {
-    givenBucket()
-    val key = "name"
-    val instant = Instant.ofEpochMilli(1514477008120L)
-    val retention = Retention(Mode.COMPLIANCE, instant)
-    val s3ObjectMetadata =
-      s3ObjectMetadata(
-        key,
-        UUID.randomUUID().toString(),
-        retention = retention,
-      )
-    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.RETENTION, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML),
-      ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(retention)))
-  }
-
-  @Test
-  @Throws(Exception::class)
-  fun testPutObjectRetention_Ok() {
-    givenBucket()
-    val key = "name"
-    val instant = Instant.ofEpochMilli(1514477008120L)
-    val retention = Retention(Mode.COMPLIANCE, instant)
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.RETENTION, "ignored")
-        .build()
-        .toString()
-    mockMvc
-      .perform(
-        put(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML)
-          .content(MAPPER.writeValueAsString(retention)),
-      ).andExpect(status().isOk)
-
-    verify(objectService).setRetention("test-bucket", key, null, retention)
-  }
-
-  @Test
   @Throws(Exception::class)
   fun testGetObject_Range_Ok() {
     givenBucket()
@@ -633,126 +441,13 @@ internal class ObjectControllerTest : BaseControllerTest() {
   }
 
   @Test
-  fun testDeleteObjectTagging_NoContent() {
-    givenBucket()
-    val key = "name"
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.TAGGING, "ignored")
-        .build()
-        .toString()
-
-    mockMvc
-      .perform(
-        MockMvcRequestBuilders
-          .delete(uri)
-          .accept(MediaType.APPLICATION_XML),
-      ).andExpect(status().isNoContent)
-    verify(objectService).setTags("test-bucket", key, null, null)
-  }
-
-  @Test
-  fun testGetLegalHold_Ok() {
-    givenBucket()
-    val key = "locked"
-    val legalHold = LegalHold(LegalHold.Status.ON)
-    val metadata =
-      s3ObjectMetadata(
-        key,
-        UUID.randomUUID().toString(),
-        legalHold = legalHold,
-      )
-    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
-    whenever(objectService.verifyObjectLockConfiguration("test-bucket", key, null)).thenReturn(metadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
-        .build()
-        .toString()
-
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML),
-      ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(legalHold)))
-  }
-
-  @Test
-  fun testPutLegalHold_Ok() {
-    givenBucket()
-    val key = "locked"
-    val legalHold = LegalHold(LegalHold.Status.OFF)
-    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
-    whenever(objectService.verifyObjectExists("test-bucket", key, null))
-      .thenReturn(s3ObjectMetadata)
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.LEGAL_HOLD, "ignored")
-        .build()
-        .toString()
-
-    mockMvc
-      .perform(
-        put(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML)
-          .content(MAPPER.writeValueAsString(legalHold)),
-      ).andExpect(status().isOk)
-    verify(objectService).setLegalHold("test-bucket", key, null, legalHold)
-  }
-
-  @Test
-  fun testGetObjectAttributes_Ok() {
-    givenBucket()
-    val key = "attrs.txt"
-    val testFile = File(UPLOAD_FILE_NAME)
-    val hex = DigestUtil.hexDigest(testFile.inputStream())
-    val metadata = s3ObjectMetadata(key, hex)
-    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
-        .build()
-        .toString()
-
-    val expected =
-      GetObjectAttributesOutput(
-        null,
-        hex,
-        null,
-        testFile.length(),
-        StorageClass.STANDARD,
-      )
-
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .contentType(MediaType.APPLICATION_XML)
-          .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag,Checksum,ObjectSize,StorageClass"),
-      ).andExpect(status().isOk)
-      .andExpect(content().string(MAPPER.writeValueAsString(expected)))
-  }
-
-  @Test
   fun testDeleteObjects_Ok() {
     givenBucket()
     val body =
       Delete(
         listOf(
-          S3ObjectIdentifier("a", "etag", "0", "1", "v1"),
-          S3ObjectIdentifier("b", "etag2", "0", "2", "v2"),
+          S3ObjectIdentifier("a", "\"etag\"", "0", "1", "v1"),
+          S3ObjectIdentifier("b", "\"etag2\"", "0", "2", "v2"),
         ),
         false,
       )
@@ -911,13 +606,9 @@ internal class ObjectControllerTest : BaseControllerTest() {
         key,
         versionId = "v1",
       )
-    // First verify call returns the object
-    whenever(objectService.verifyObjectExists(bucket, key, null))
-      .thenReturn(existingMeta)
-      // Second call after delete simulates a delete marker response
-      .thenThrow(S3Exception.NO_SUCH_KEY_DELETE_MARKER)
-
-    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(true)
+    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(existingMeta)
+    whenever(objectService.deleteObject(bucket, key, null))
+      .thenReturn(ObjectService.DeleteOutcome(deleted = false, isDeleteMarker = true))
 
     mockMvc
       .perform(
@@ -938,7 +629,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     // Single-arg overload used by postObject
     whenever(objectService.toTempFile(any<InputStream>()))
-      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+      .thenReturn(Pair(tempFile, ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
     whenever(
@@ -1041,7 +732,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
     val tempFile = Files.createTempFile("postObjectTags", "").also { testFile.copyTo(it.toFile(), overwrite = true) }
 
     whenever(objectService.toTempFile(any<InputStream>()))
-      .thenReturn(Pair(tempFile, DigestUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
+      .thenReturn(Pair(tempFile, ChecksumUtil.checksumFor(testFile.toPath(), DefaultChecksumAlgorithm.CRC32)))
 
     val tagging = Tagging(TagSet(listOf(Tag("k1", "v1"), Tag("k2", "v2"))))
     val returned = s3ObjectMetadata(key, DigestUtil.hexDigest(testFile.inputStream()))
@@ -1142,81 +833,6 @@ internal class ObjectControllerTest : BaseControllerTest() {
   }
 
   @Test
-  fun testGetObjectAttributes_Selective_WithChecksum() {
-    givenBucket()
-    val key = "ga.txt"
-    val s3ObjectMetadata =
-      s3ObjectMetadata(
-        key,
-        checksumAlgorithm = ChecksumAlgorithm.CRC32C,
-        checksum = "crcc-value",
-      )
-
-    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(s3ObjectMetadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
-        .build()
-        .toString()
-
-    val mvcResult =
-      mockMvc
-        .perform(
-          get(uri)
-            .accept(MediaType.APPLICATION_XML)
-            .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "Checksum,ObjectSize"),
-        ).andExpect(status().isOk)
-        .andReturn()
-
-    val got = MAPPER.readValue(mvcResult.response.contentAsString, GetObjectAttributesOutput::class.java)
-    // only selected fields should be present
-    assertThat(got.etag).isNull()
-    assertThat(got.storageClass).isNull()
-    assertThat(got.objectSize).isEqualTo(s3ObjectMetadata.dataPath.toFile().length())
-    assertThat(got.checksum?.checksumCRC32C).isEqualTo("crcc-value")
-    assertThat(got.checksum?.checksumType).isEqualTo(ChecksumType.FULL_OBJECT)
-  }
-
-  @Test
-  fun testGetObjectAttributes_WithObjectParts() {
-    givenBucket()
-    val key = "multipart.txt"
-    val part = ObjectPart(checksumCRC32 = "abc123==", partNumber = 1, size = 1024L)
-    val metadata = s3ObjectMetadata(key).copy(parts = listOf(part))
-    whenever(objectService.verifyObjectExists("test-bucket", key, null)).thenReturn(metadata)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/test-bucket/$key")
-        .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
-        .build()
-        .toString()
-
-    val mvcResult =
-      mockMvc
-        .perform(
-          get(uri)
-            .accept(MediaType.APPLICATION_XML)
-            .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ObjectParts"),
-        ).andExpect(status().isOk)
-        .andReturn()
-
-    val got = MAPPER.readValue(mvcResult.response.contentAsString, GetObjectAttributesOutput::class.java)
-    assertThat(got.objectParts).isNotNull().hasSize(1)
-    val objectParts = got.objectParts!![0]
-    assertThat(objectParts.partsCount).isEqualTo(1)
-    assertThat(objectParts.parts).hasSize(1)
-    assertThat(objectParts.parts!![0].partNumber).isEqualTo(1)
-    assertThat(objectParts.parts!![0].size).isEqualTo(1024L)
-    assertThat(objectParts.parts!![0].checksumCRC32).isEqualTo("abc123==")
-    // attributes not requested must be absent
-    assertThat(got.etag).isNull()
-    assertThat(got.storageClass).isNull()
-  }
-
-  @Test
   fun testCopyObject_MetadataDirectiveCopy_WithConditionalHeaders() {
     val targetBucket = "test-bucket"
     val sourceBucket = "src-bucket"
@@ -1291,8 +907,8 @@ internal class ObjectControllerTest : BaseControllerTest() {
 
     // Initial verification throws NO_SUCH_KEY (controller should ignore and continue)
     doThrow(S3Exception.NO_SUCH_KEY).whenever(objectService).verifyObjectExists(bucket, key, null)
-    // Deletion reports false
-    whenever(objectService.deleteObject(bucket, key, null)).thenReturn(false)
+    whenever(objectService.deleteObject(bucket, key, null))
+      .thenReturn(ObjectService.DeleteOutcome(deleted = false, isDeleteMarker = false))
 
     val lm = Instant.now()
     val size = 123L
@@ -1406,54 +1022,6 @@ internal class ObjectControllerTest : BaseControllerTest() {
       // user metadata transformed to x-amz-meta-*
       .andExpect(header().string("x-amz-meta-foo", "bar"))
       .andExpect(header().string("x-amz-meta-answer", "42"))
-  }
-
-  @Test
-  fun testGetObjectAttributes_EtagOnly_NoQuotes_AndVersionHeader() {
-    val bucket = "test-bucket"
-    val key = "attrs-etag.txt"
-    val testFile = File(UPLOAD_FILE_NAME)
-
-    val versioningConfiguration =
-      VersioningConfiguration(
-        VersioningConfiguration.MFADelete.DISABLED,
-        VersioningConfiguration.Status.ENABLED,
-      )
-    val versioningBucket =
-      bucketMetadata(
-        name = bucket,
-        versioningConfiguration = versioningConfiguration,
-      )
-    whenever(bucketService.verifyBucketExists(bucket)).thenReturn(versioningBucket)
-
-    // note: S3ObjectMetadata normalizes etag to quoted; controller should strip quotes for attributes
-    val hex = DigestUtil.hexDigest(testFile.inputStream())
-    val meta = s3ObjectMetadata(key, hex, versionId = "va1")
-    whenever(objectService.verifyObjectExists(bucket, key, null)).thenReturn(meta)
-
-    val uri =
-      UriComponentsBuilder
-        .fromUriString("/$bucket/$key")
-        .queryParam(AwsHttpParameters.ATTRIBUTES, "ignored")
-        .build()
-        .toString()
-
-    mockMvc
-      .perform(
-        get(uri)
-          .accept(MediaType.APPLICATION_XML)
-          .header(AwsHttpHeaders.X_AMZ_OBJECT_ATTRIBUTES, "ETag"),
-      ).andExpect(status().isOk)
-      // version header present
-      .andExpect(header().string(AwsHttpHeaders.X_AMZ_VERSION_ID, "va1"))
-      .andExpect { result ->
-        val body = result.response.contentAsString
-        // ETag must be without quotes in XML body
-        assertThat(body).contains("<ETag>$hex</ETag>")
-        // other fields not requested should not appear
-        assertThat(body).doesNotContain("<ObjectSize>")
-        assertThat(body).doesNotContain("<StorageClass>")
-      }
   }
 
   private fun givenBucket() {

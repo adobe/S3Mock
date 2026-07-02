@@ -20,6 +20,7 @@ import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.S3Exception.Companion.INVALID_TAG
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.Delete
+import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Mode
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.S3ObjectIdentifier
@@ -125,8 +126,9 @@ internal class ObjectServiceTest : ServiceTestBase() {
     whenever(objectStore.deleteObject(any(), any(), isNull()))
       .thenReturn(true)
     whenever(bucketStore.removeFromBucket(key, bucketName)).thenReturn(true)
-    val deleted = iut.deleteObject(bucketName, key, null)
-    assertThat(deleted).isTrue()
+    val outcome = iut.deleteObject(bucketName, key, null)
+    assertThat(outcome.deleted).isTrue()
+    assertThat(outcome.isDeleteMarker).isFalse()
   }
 
   @Test
@@ -290,13 +292,112 @@ internal class ObjectServiceTest : ServiceTestBase() {
   }
 
   @Test
-  fun testVerifyObjectLockConfiguration_failure() {
+  fun testVerifyObjectMatching_matchUnquotedEtag() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // stored etag is "\"etag\""; pass the bare (unquoted) form — should still match
+    iut.verifyObjectMatching(listOf("etag"), null, null, null, s3ObjectMetadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_matchAsteriskWildcard() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // plain '*' wildcard (ObjectService.WILDCARD) should match any object
+    iut.verifyObjectMatching(listOf(ObjectService.WILDCARD), null, null, null, s3ObjectMetadata)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullObject_withMatch_throwsNoSuchKey() {
+    assertThatThrownBy {
+      iut.verifyObjectMatching(listOf("\"etag\""), null, null, null, null)
+    }.isEqualTo(S3Exception.NO_SUCH_KEY)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_nullObject_noExpectation_success() {
+    // no match/noneMatch expectations on a missing object — should not throw
+    iut.verifyObjectMatching(null, null, null, null, null)
+  }
+
+  @Test
+  fun testVerifyObjectMatching_noneMatchUnquotedEtag() {
+    val key = "key"
+    val s3ObjectMetadata = s3ObjectMetadata(UUID.randomUUID(), key)
+    // stored etag is "\"etag\""; bare (unquoted) form in noneMatch should still trigger NOT_MODIFIED
+    assertThatThrownBy {
+      iut.verifyObjectMatching(null, listOf("etag"), null, null, s3ObjectMetadata)
+    }.isEqualTo(S3Exception.NOT_MODIFIED)
+  }
+
+  @Test
+  fun testVerifyLegalHoldExists_failure() {
     val bucketName = "bucket"
     val prefix = ""
     val key = "key"
     givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
-    assertThatThrownBy { iut.verifyObjectLockConfiguration(bucketName, key, null) }
+    assertThatThrownBy { iut.verifyLegalHoldExists(bucketName, key, null) }
       .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyLegalHoldExists_onlyRetentionSet_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plus(1, ChronoUnit.DAYS))
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(retention = retention))
+    assertThatThrownBy { iut.verifyLegalHoldExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    assertThatThrownBy { iut.verifyRetentionExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_onlyLegalHoldSet_failure() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(legalHold = legalHold))
+    assertThatThrownBy { iut.verifyRetentionExists(bucketName, key, null) }
+      .isEqualTo(S3Exception.NOT_FOUND_OBJECT_LOCK)
+  }
+
+  @Test
+  fun testVerifyLegalHoldExists_success() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val legalHold = LegalHold(LegalHold.Status.ON)
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(legalHold = legalHold))
+    assertThat(iut.verifyLegalHoldExists(bucketName, key, null).legalHold).isEqualTo(legalHold)
+  }
+
+  @Test
+  fun testVerifyRetentionExists_success() {
+    val bucketName = "bucket"
+    val prefix = ""
+    val key = "key"
+    val retention = Retention(Mode.COMPLIANCE, Instant.now().plus(1, ChronoUnit.DAYS))
+    givenBucketWithContents(bucketName, prefix, listOf(givenS3Object(key)))
+    whenever(objectStore.getS3ObjectMetadata(any(), any(), isNull()))
+      .thenReturn(s3ObjectMetadata(UUID.randomUUID(), key).copy(retention = retention))
+    assertThat(iut.verifyRetentionExists(bucketName, key, null).retention).isEqualTo(retention)
   }
 
   @Test
@@ -518,8 +619,9 @@ internal class ObjectServiceTest : ServiceTestBase() {
     val key = "missing"
     givenBucket(bucketName)
 
-    val deleted = iut.deleteObject(bucketName, key, null)
-    assertThat(deleted).isFalse()
+    val outcome = iut.deleteObject(bucketName, key, null)
+    assertThat(outcome.deleted).isFalse()
+    assertThat(outcome.isDeleteMarker).isFalse()
   }
 
   companion object {

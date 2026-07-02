@@ -22,6 +22,6 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 @S3Verified(year = 2025)
 data class TagSet(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Tag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Tag", namespace = S3_NS)
   val tags: List<Tag>,
 )

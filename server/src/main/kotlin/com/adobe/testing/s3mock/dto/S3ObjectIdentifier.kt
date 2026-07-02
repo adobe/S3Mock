@@ -16,57 +16,26 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * Object identifier used in many APIs.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectIdentifier.html)
  */
 @S3Verified(year = 2025)
-class S3ObjectIdentifier(
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+data class S3ObjectIdentifier(
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
-  @param:JsonProperty("LastModifiedTime", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = S3_NS)
+  val etag: String?,
+  @param:JsonProperty("LastModifiedTime", namespace = S3_NS)
   val lastModifiedTime: String?,
-  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Size", namespace = S3_NS)
   val size: String?,
-  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("VersionId", namespace = S3_NS)
   val versionId: String?,
-) {
-  @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as S3ObjectIdentifier
-
-    if (key != other.key) return false
-    if (lastModifiedTime != other.lastModifiedTime) return false
-    if (size != other.size) return false
-    if (versionId != other.versionId) return false
-    if (etag != other.etag) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int {
-    var result = key.hashCode()
-    result = 31 * result + (lastModifiedTime?.hashCode() ?: 0)
-    result = 31 * result + (size?.hashCode() ?: 0)
-    result = 31 * result + (versionId?.hashCode() ?: 0)
-    result = 31 * result + (etag?.hashCode() ?: 0)
-    return result
-  }
-}
+)

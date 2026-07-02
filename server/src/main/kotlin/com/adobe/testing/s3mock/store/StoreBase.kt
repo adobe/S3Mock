@@ -16,43 +16,53 @@
 
 package com.adobe.testing.s3mock.store
 
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
+import tools.jackson.databind.ObjectMapper
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.inputStream
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 abstract class StoreBase {
   /**
-   * Stores the content of an InputStream in a File.
-   * Creates the File if it does not exist.
-   * Uses buffered streams with a fixed buffer size to optimize memory usage for large files.
-   *
-   * @param inputPath the incoming binary data to be saved.
-   * @param filePath Path where the stream should be saved.
-   *
-   * @return the newly created File.
+   * One lock object per UUID — shared across [ObjectStore] and [MultipartStore] subclasses.
+   * Guards read-modify-write access to metadata files that can be updated concurrently for the
+   * same id (e.g. object or multipart-upload metadata); not required for per-operation files
+   * that are never contended, such as individual part binaries.
    */
+  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap()
+
+  protected fun lockFor(id: UUID): Any = lockStore.computeIfAbsent(id) { Any() }
+
+  /**
+   * Serialise [value] to [file] under the per-[lockId] lock, converting [IOException] to
+   * [IllegalStateException] with [context] as the error message prefix.
+   */
+  protected fun <T : Any> writeLockedJson(
+    lockId: UUID,
+    file: File,
+    value: T,
+    context: String,
+    objectMapper: ObjectMapper,
+  ) {
+    try {
+      synchronized(lockFor(lockId)) { objectMapper.writeValue(file, value) }
+    } catch (e: IOException) {
+      throw IllegalStateException("Could not write $context", e)
+    }
+  }
+
   fun inputPathToFile(
     inputPath: Path,
     filePath: Path,
   ): File {
-    val targetFile = filePath.toFile()
     try {
-      targetFile.createNewFile()
-      BufferedInputStream(inputPath.inputStream(), BUFFER_SIZE).use { input ->
-        BufferedOutputStream(targetFile.outputStream(), BUFFER_SIZE).use { os ->
-          input.transferTo(os)
-        }
-      }
+      Files.copy(inputPath, filePath, REPLACE_EXISTING)
     } catch (e: IOException) {
       throw IllegalStateException("Could not write object binary-file.", e)
     }
-    return targetFile
-  }
-
-  companion object {
-    private const val BUFFER_SIZE = 1024 * 1024
+    return filePath.toFile()
   }
 }

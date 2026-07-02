@@ -61,7 +61,10 @@ class TaggingHeaderConverter(
         source
           .split('&')
           .filter { it.isNotBlank() }
-          .map(::Tag)
+          .map { fragment ->
+            require('=' in fragment) { "Invalid tag entry '$fragment' in header: $source" }
+            Tag(fragment)
+          }
 
       return tags.takeIf { it.isNotEmpty() }
     }

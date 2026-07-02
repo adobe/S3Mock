@@ -32,11 +32,11 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
 import com.adobe.testing.s3mock.service.BucketService
 import com.adobe.testing.s3mock.service.MultipartService
 import com.adobe.testing.s3mock.service.ObjectService
 import com.adobe.testing.s3mock.store.KmsKeyStore
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -60,7 +60,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.web.util.UriComponentsBuilder
 import java.nio.file.Files
-import java.util.Date
+import java.time.Instant
 import java.util.UUID
 
 @MockitoBean(types = [KmsKeyStore::class, ObjectController::class, BucketController::class])
@@ -254,7 +254,16 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     // create result with encryption headers to be echoed
     val mpUpload =
-      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
     val info =
       MultipartUploadInfo(
         mpUpload,
@@ -275,7 +284,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,
@@ -323,7 +332,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
       )
     val bucketMeta = bucketMetadata(versioningConfiguration = versioningConfiguration)
     whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
-    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
 
     val key = "ver/key.txt"
     val uploadId = UUID.randomUUID()
@@ -339,7 +347,16 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
     val mpUpload =
-      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
     val info =
       MultipartUploadInfo(
         mpUpload,
@@ -360,7 +377,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,
@@ -418,7 +435,16 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.getObject(TEST_BUCKET_NAME, key, null)).thenReturn(s3meta)
 
     val mpUpload =
-      MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, key, Owner.DEFAULT_OWNER, StorageClass.STANDARD, uploadId.toString())
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
     val info =
       MultipartUploadInfo(
         mpUpload,
@@ -439,7 +465,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         TEST_BUCKET_NAME,
         key,
         "etag-complete",
-        info,
+        info.encryptionHeaders,
         null,
         ChecksumType.FULL_OBJECT,
         null,
@@ -603,7 +629,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
         MultipartUpload(
           null,
           null,
-          Date(),
+          Instant.now(),
           Initiator.DEFAULT_INITIATOR,
           "my/key.txt",
           Owner.DEFAULT_OWNER,
@@ -668,7 +694,16 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     val uploads =
       listOf(
-        MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "pre/a.txt", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1"),
+        MultipartUpload(
+          null,
+          null,
+          Instant.now(),
+          Initiator.DEFAULT_INITIATOR,
+          "pre/a.txt",
+          Owner.DEFAULT_OWNER,
+          StorageClass.STANDARD,
+          "u-1",
+        ),
       )
     val result =
       ListMultipartUploadsResult(
@@ -726,7 +761,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
 
     val uploads =
       listOf(
-        MultipartUpload(null, null, Date(), Initiator.DEFAULT_INITIATOR, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1"),
+        MultipartUpload(null, null, Instant.now(), Initiator.DEFAULT_INITIATOR, "k1", Owner.DEFAULT_OWNER, StorageClass.STANDARD, "u-1"),
       )
 
     val result =
@@ -1125,7 +1160,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       ),
     ).thenReturn(s3meta)
 
-    val copyResult = CopyPartResult(Date(), "etag-xyz")
+    val copyResult = CopyPartResult(Instant.now(), "etag-xyz")
     whenever(
       multipartService.copyPart(
         any(),
@@ -1315,7 +1350,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), eq("v1")))
       .thenReturn(s3meta)
 
-    val copyResult = CopyPartResult(Date(), "etag-xyz")
+    val copyResult = CopyPartResult(Instant.now(), "etag-xyz")
     whenever(
       multipartService.copyPart(
         any(),
@@ -1363,7 +1398,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     whenever(objectService.verifyObjectExists(eq("source-bucket"), eq("source/key.txt"), anyOrNull()))
       .thenReturn(s3meta)
 
-    val copyResult = CopyPartResult(Date(), "etag-enc")
+    val copyResult = CopyPartResult(Instant.now(), "etag-enc")
     val uploadId = UUID.randomUUID()
     whenever(
       multipartService.copyPart(
@@ -1747,7 +1782,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       partNumber: Int,
       size: Long,
       etag: String = "someEtag$partNumber",
-    ): Part = Part(partNumber, etag, Date(), size)
+    ): Part = Part(partNumber, etag, Instant.now(), size)
 
     private fun completedParts(parts: List<Part>): List<CompletedPart> =
       parts

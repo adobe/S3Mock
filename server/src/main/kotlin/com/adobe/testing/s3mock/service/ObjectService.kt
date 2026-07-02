@@ -23,16 +23,17 @@ import com.adobe.testing.s3mock.dto.Delete
 import com.adobe.testing.s3mock.dto.DeleteResult
 import com.adobe.testing.s3mock.dto.DeletedS3Object
 import com.adobe.testing.s3mock.dto.Error
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.LegalHold
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Retention
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.adobe.testing.s3mock.util.DigestUtil.base64Digest
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
@@ -40,6 +41,7 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 open class ObjectService(
   private val bucketStore: BucketStore,
@@ -163,15 +165,36 @@ open class ObjectService(
     bucketName: String,
     key: String,
     versionId: String?,
-  ): Boolean {
+  ): DeleteOutcome {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key) ?: return false
+    val id = bucketMetadata.getID(key) ?: return DeleteOutcome(deleted = false, isDeleteMarker = false)
 
-    return if (objectStore.deleteObject(bucketMetadata, id, versionId)) {
-      bucketStore.removeFromBucket(key, bucketName)
-    } else {
-      false
-    }
+    // Read before delete: tells us whether this version is itself a delete marker, and whether
+    // the object exists at all (needed to distinguish "not found" from "delete marker created").
+    val metaBefore = objectStore.getS3ObjectMetadata(bucketMetadata, id, versionId)
+
+    val removed =
+      if (objectStore.deleteObject(bucketMetadata, id, versionId)) {
+        bucketStore.removeFromBucket(key, bucketName)
+      } else {
+        false
+      }
+
+    val isDeleteMarker =
+      when {
+        // Object did not exist — no marker involved.
+        metaBefore == null -> false
+
+        // Versioning enabled, no versionId: a delete marker was just created.
+        bucketMetadata.isVersioningEnabled && versionId == null -> true
+
+        // Versioning enabled, specific version deleted: was that version itself a delete marker?
+        bucketMetadata.isVersioningEnabled -> metaBefore.deleteMarker
+
+        else -> false
+      }
+
+    return DeleteOutcome(deleted = removed, isDeleteMarker = isDeleteMarker)
   }
 
   fun getObject(
@@ -190,8 +213,7 @@ open class ObjectService(
     versionId: String?,
     tags: List<Tag>?,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeTags(bucketMetadata, uuid, versionId, tags)
   }
 
@@ -201,8 +223,7 @@ open class ObjectService(
     versionId: String?,
     legalHold: LegalHold,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeLegalHold(bucketMetadata, uuid, versionId, legalHold)
   }
 
@@ -212,8 +233,7 @@ open class ObjectService(
     versionId: String?,
     policy: AccessControlPolicy,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeAcl(bucketMetadata, uuid, versionId, policy)
   }
 
@@ -222,8 +242,7 @@ open class ObjectService(
     key: String,
     versionId: String?,
   ): AccessControlPolicy {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     return objectStore.readAcl(bucketMetadata, uuid, versionId)
   }
 
@@ -233,8 +252,7 @@ open class ObjectService(
     versionId: String?,
     retention: Retention,
   ) {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     objectStore.storeRetention(bucketMetadata, uuid, versionId, retention)
   }
 
@@ -276,12 +294,8 @@ open class ObjectService(
     ifModifiedSince: List<Instant>?,
     ifUnmodifiedSince: List<Instant>?,
     s3ObjectMetadata: S3ObjectMetadata?,
-  ) {
-    try {
-      verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata)
-    } catch (e: S3Exception) {
-      if (e == S3Exception.NOT_MODIFIED) throw S3Exception.PRECONDITION_FAILED else throw e
-    }
+  ) = rethrowAsPreconditionFailed {
+    verifyObjectMatching(match, noneMatch, ifModifiedSince, ifUnmodifiedSince, s3ObjectMetadata)
   }
 
   fun verifyObjectMatching(
@@ -289,10 +303,15 @@ open class ObjectService(
     key: String,
     match: List<String>?,
     noneMatch: List<String>?,
-  ) {
+  ) = rethrowAsPreconditionFailed {
+    val s3ObjectMetadataExisting = getObject(bucketName, key, null)
+    verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting)
+  }
+
+  /** Translates [S3Exception.NOT_MODIFIED] to [S3Exception.PRECONDITION_FAILED] for copy operations. */
+  private fun rethrowAsPreconditionFailed(body: () -> Unit) {
     try {
-      val s3ObjectMetadataExisting = getObject(bucketName, key, null)
-      verifyObjectMatching(match, noneMatch, null, null, s3ObjectMetadataExisting)
+      body()
     } catch (e: S3Exception) {
       if (e === S3Exception.NOT_MODIFIED) throw S3Exception.PRECONDITION_FAILED else throw e
     }
@@ -309,7 +328,7 @@ open class ObjectService(
 
     matchLastModifiedTime?.firstOrNull()?.let {
       val lastModified = Instant.ofEpochMilli(s3ObjectMetadata.lastModified)
-      if (!lastModified.truncatedTo(ChronoUnit.SECONDS).equals(it.truncatedTo(ChronoUnit.SECONDS))) {
+      if (lastModified.truncatedTo(ChronoUnit.SECONDS) != it.truncatedTo(ChronoUnit.SECONDS)) {
         throw S3Exception.PRECONDITION_FAILED
       }
     }
@@ -349,17 +368,11 @@ open class ObjectService(
     }
 
     if (!match.isNullOrEmpty()) {
-      val unquotedEtag = etag?.replace("\"", "")
-      if (
-        match.contains(WILDCARD_ETAG) ||
-        match.contains(WILDCARD) ||
-        match.contains(etag) ||
-        (unquotedEtag != null && match.contains(unquotedEtag))
-      ) {
+      if (matchesAny(match, etag)) {
         // request cares only that the object exists or that the etag matches.
         LOG.debug("Object {} exists", s3ObjectMetadata.key)
         return
-      } else if (!match.contains(etag)) {
+      } else {
         LOG.debug("Object {} does not match etag {}", s3ObjectMetadata.key, etag)
         throw S3Exception.PRECONDITION_FAILED
       }
@@ -374,13 +387,7 @@ open class ObjectService(
     }
 
     if (!noneMatch.isNullOrEmpty()) {
-      val unquotedEtag = etag?.replace("\"", "")
-      if (
-        noneMatch.contains(WILDCARD_ETAG) ||
-        noneMatch.contains(WILDCARD) ||
-        noneMatch.contains(etag) ||
-        (unquotedEtag != null && noneMatch.contains(unquotedEtag))
-      ) {
+      if (matchesAny(noneMatch, etag)) {
         // request cares only that the object etag does not match.
         LOG.debug("Object {} has an ETag {} that matches one of the 'noneMatch' values", s3ObjectMetadata.key, etag)
         throw S3Exception.NOT_MODIFIED
@@ -388,13 +395,21 @@ open class ObjectService(
     }
   }
 
+  /** Returns true if [candidates] contains a wildcard or either the quoted or unquoted form of [etag]. */
+  private fun matchesAny(
+    candidates: List<String>,
+    etag: String?,
+  ): Boolean {
+    val unquoted = etag?.replace("\"", "")
+    return candidates.any { it == WILDCARD_ETAG || it == WILDCARD || it == etag || it == unquoted }
+  }
+
   fun verifyObjectExists(
     bucketName: String,
     key: String,
     versionId: String?,
   ): S3ObjectMetadata {
-    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY
+    val (bucketMetadata, uuid) = requireObject(bucketName, key)
     val s3ObjectMetadata =
       objectStore.getS3ObjectMetadata(bucketMetadata, uuid, versionId)
         ?: throw S3Exception.NO_SUCH_KEY
@@ -402,15 +417,23 @@ open class ObjectService(
     return s3ObjectMetadata
   }
 
-  fun verifyObjectLockConfiguration(
+  fun verifyLegalHoldExists(
     bucketName: String,
     key: String,
     versionId: String?,
   ): S3ObjectMetadata {
     val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
-    val noLegalHold = s3ObjectMetadata.legalHold == null
-    val noRetention = s3ObjectMetadata.retention == null
-    if (noLegalHold && noRetention) throw S3Exception.NOT_FOUND_OBJECT_LOCK
+    if (s3ObjectMetadata.legalHold == null) throw S3Exception.NOT_FOUND_OBJECT_LOCK
+    return s3ObjectMetadata
+  }
+
+  fun verifyRetentionExists(
+    bucketName: String,
+    key: String,
+    versionId: String?,
+  ): S3ObjectMetadata {
+    val s3ObjectMetadata = verifyObjectExists(bucketName, key, versionId)
+    if (s3ObjectMetadata.retention == null) throw S3Exception.NOT_FOUND_OBJECT_LOCK
     return s3ObjectMetadata
   }
 
@@ -428,6 +451,15 @@ open class ObjectService(
       verifyTagLength(MIN_ALLOWED_TAG_VALUE_LENGTH, MAX_ALLOWED_TAG_VALUE_LENGTH, tag.value)
       verifyTagChars(tag.value)
     }
+  }
+
+  /** Resolves [bucketName]+[key] to a (BucketMetadata, UUID) pair; throws [S3Exception.NO_SUCH_KEY] if the key is absent. */
+  private fun requireObject(
+    bucketName: String,
+    key: String,
+  ): Pair<BucketMetadata, UUID> {
+    val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    return bucketMetadata to (bucketMetadata.getID(key) ?: throw S3Exception.NO_SUCH_KEY)
   }
 
   private fun verifyDuplicateTagKeys(tags: List<Tag>) {
@@ -450,6 +482,16 @@ open class ObjectService(
   private fun verifyTagChars(tag: String) {
     if (!TAG_ALLOWED_CHARS.matches(tag)) throw S3Exception.INVALID_TAG
   }
+
+  /**
+   * Outcome of a [deleteObject] call: [deleted] is true when the object or version was fully
+   * removed from storage; [isDeleteMarker] is true when a delete marker was created (versioned
+   * delete without a specific versionId) or the deleted version was itself a delete marker.
+   */
+  data class DeleteOutcome(
+    val deleted: Boolean,
+    val isDeleteMarker: Boolean,
+  )
 
   companion object {
     const val WILDCARD_ETAG: String = "\"*\""

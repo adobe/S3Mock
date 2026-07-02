@@ -31,7 +31,7 @@ internal class CopyObjectResultTest {
         null,
         null,
         ChecksumType.FULL_OBJECT,
-        "99f2fdceebf20fb2e891810adfb0eb71",
+        "\"99f2fdceebf20fb2e891810adfb0eb71\"",
         "2017-12-28T16:03:28.120Z",
       )
     assertThat(iut).isNotNull()

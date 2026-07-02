@@ -23,9 +23,9 @@ import com.adobe.testing.s3mock.dto.ObjectLockEnabled
 import com.adobe.testing.s3mock.dto.ObjectOwnership
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.dto.VersioningConfiguration.Status
-import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import com.adobe.testing.s3mock.store.MultipartStore
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -692,6 +692,34 @@ internal class BucketServiceTest : ServiceTestBase() {
     // With versioning disabled, entries are mapped 1:1 without delete markers
     assertThat(out.deleteMarkers).isEmpty()
     assertThat(out.objectVersions).isNotEmpty()
+  }
+
+  @Test
+  fun testListVersions_withSpecialCharactersInKey_urlEncoding() {
+    val bucketName = "bucket-special-chars"
+    val specialKey = "file=name\$Dollar;Semicolon&Ampersand@At:Colon     Space,Comma?Question-mark"
+    val encodingType = "url"
+    val maxKeys = 100
+
+    givenBucketWithContents(bucketName, null, listOf(givenS3Object(specialKey)))
+
+    val out =
+      iut.listVersions(
+        bucketName,
+        null,
+        null,
+        encodingType,
+        maxKeys,
+        null,
+        null,
+      )
+
+    // Object with special characters must appear in the result (not skipped due to ID lookup failure)
+    assertThat(out.objectVersions).hasSize(1)
+    // Key in response must be URL-encoded when encodingType="url"
+    assertThat(out.objectVersions!![0].key).doesNotContain("=", "&", "?", " ")
+    assertThat(out.deleteMarkers).isEmpty()
+    assertThat(out.encodingType).isEqualTo(encodingType)
   }
 
   companion object {

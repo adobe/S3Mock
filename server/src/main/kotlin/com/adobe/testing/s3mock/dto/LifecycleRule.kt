@@ -26,24 +26,24 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  */
 @S3Verified(year = 2025)
 data class LifecycleRule(
-  @param:JsonProperty("AbortIncompleteMultipartUpload", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("AbortIncompleteMultipartUpload", namespace = S3_NS)
   val abortIncompleteMultipartUpload: AbortIncompleteMultipartUpload?,
-  @param:JsonProperty("Expiration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Expiration", namespace = S3_NS)
   val expiration: LifecycleExpiration?,
-  @param:JsonProperty("Filter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Filter", namespace = S3_NS)
   val filter: LifecycleRuleFilter?,
-  @param:JsonProperty("ID", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ID", namespace = S3_NS)
   val id: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("NoncurrentVersionExpiration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NoncurrentVersionExpiration", namespace = S3_NS)
   val noncurrentVersionExpiration: NoncurrentVersionExpiration?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("NoncurrentVersionTransition", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NoncurrentVersionTransition", namespace = S3_NS)
   val noncurrentVersionTransitions: List<NoncurrentVersionTransition>?,
-  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Status", namespace = S3_NS)
   val status: Status?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Transition", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Transition", namespace = S3_NS)
   val transitions: List<Transition>?,
 ) {
   /**
@@ -61,7 +61,7 @@ data class LifecycleRule(
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): Status? = enumFromValue<Status>(value) { it.value }
     }
   }
 }

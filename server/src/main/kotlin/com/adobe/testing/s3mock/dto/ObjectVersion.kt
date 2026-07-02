@@ -16,67 +16,42 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonProperty
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ObjectVersion.html).
  */
 @S3Verified(year = 2025)
-class ObjectVersion(
-  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+data class ObjectVersion(
+  @param:JsonProperty("ChecksumAlgorithm", namespace = S3_NS)
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
-  @param:JsonProperty("IsLatest", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = S3_NS)
+  val etag: String?,
+  @param:JsonProperty("IsLatest", namespace = S3_NS)
   val isLatest: Boolean?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String?,
-  @param:JsonProperty("LastModified", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LastModified", namespace = S3_NS)
   val lastModified: String?,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner?,
-  @param:JsonProperty("RestoreStatus", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("RestoreStatus", namespace = S3_NS)
   val restoreStatus: RestoreStatus?,
-  @param:JsonProperty("Size", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Size", namespace = S3_NS)
   val size: String?,
-  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StorageClass", namespace = S3_NS)
   val storageClass: StorageClass?,
-  @param:JsonProperty("VersionId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("VersionId", namespace = S3_NS)
   val versionId: String?,
 ) {
-  @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
-
   companion object {
-    fun from(
-      s3ObjectMetadata: S3ObjectMetadata,
-      isLatest: Boolean,
-    ): ObjectVersion =
-      ObjectVersion(
-        s3ObjectMetadata.checksumAlgorithm,
-        s3ObjectMetadata.checksumType,
-        normalizeEtag(s3ObjectMetadata.etag),
-        isLatest,
-        s3ObjectMetadata.key,
-        s3ObjectMetadata.modificationDate,
-        s3ObjectMetadata.owner,
-        null,
-        s3ObjectMetadata.size,
-        s3ObjectMetadata.storageClass,
-        s3ObjectMetadata.versionId,
-      )
-
     /**
      * Use if versioning is not enabled.
      */

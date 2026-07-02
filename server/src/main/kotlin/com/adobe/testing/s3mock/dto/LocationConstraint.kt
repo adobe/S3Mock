@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.RegionDeserializer
+import com.adobe.testing.s3mock.dto.serialization.RegionSerializer
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.databind.annotation.JsonDeserialize
@@ -26,7 +28,7 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlText
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("LocationConstraint", namespace = S3_NS)
 data class LocationConstraint(
   @param:JsonSerialize(using = RegionSerializer::class)
   @param:JsonDeserialize(using = RegionDeserializer::class)

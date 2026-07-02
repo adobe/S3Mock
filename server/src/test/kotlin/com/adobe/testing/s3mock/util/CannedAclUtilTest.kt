@@ -67,20 +67,26 @@ internal class CannedAclUtilTest {
   }
 
   @Test
-  fun `should create bucket owner acl variants with default owner bucket read grant`() {
-    val bucketOwnerRead = CannedAclUtil.policyForCannedAcl(ObjectCannedACL.BUCKET_OWNER_READ)
-    val bucketOwnerFullControl = CannedAclUtil.policyForCannedAcl(ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL)
+  fun `should create bucket owner read acl with READ grant for bucket owner`() {
+    val policy = CannedAclUtil.policyForCannedAcl(ObjectCannedACL.BUCKET_OWNER_READ)
 
-    val expected =
+    assertThat(policy).isEqualTo(
       policyWithAdditionalGrants(
-        Grant(
-          CanonicalUser("s3-mock-file-store", Owner.DEFAULT_OWNER_BUCKET.id),
-          Grant.Permission.READ,
-        ),
-      )
+        Grant(CanonicalUser("s3-mock-file-store", Owner.DEFAULT_OWNER_BUCKET.id), Grant.Permission.READ),
+      ),
+    )
+  }
 
-    assertThat(bucketOwnerRead).isEqualTo(expected)
-    assertThat(bucketOwnerFullControl).isEqualTo(expected)
+  @Test
+  fun `should create bucket owner full control acl with FULL_CONTROL grant for bucket owner`() {
+    val policy = CannedAclUtil.policyForCannedAcl(ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL)
+
+    assertThat(policy).isEqualTo(
+      policyWithAdditionalGrants(
+        Grant(CanonicalUser("s3-mock-file-store", Owner.DEFAULT_OWNER_BUCKET.id), Grant.Permission.FULL_CONTROL),
+      ),
+    )
+    assertThat(policy).isNotEqualTo(CannedAclUtil.policyForCannedAcl(ObjectCannedACL.BUCKET_OWNER_READ))
   }
 
   private fun ownerOnlyPolicy(): AccessControlPolicy = policyWithAdditionalGrants()

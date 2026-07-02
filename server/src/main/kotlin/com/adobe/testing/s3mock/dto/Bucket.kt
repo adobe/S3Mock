@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.store.BucketMetadata
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.nio.file.Path
@@ -26,22 +25,12 @@ import java.nio.file.Path
  */
 @S3Verified(year = 2025)
 data class Bucket(
-  @param:JsonProperty("BucketRegion", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("BucketRegion", namespace = S3_NS)
   val bucketRegion: String?,
-  @param:JsonProperty("CreationDate", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("CreationDate", namespace = S3_NS)
   val creationDate: String?,
-  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Name", namespace = S3_NS)
   val name: String?,
   @JsonIgnore
   val path: Path?,
-) {
-  companion object {
-    fun from(bucketMetadata: BucketMetadata): Bucket =
-      Bucket(
-        bucketMetadata.bucketRegion,
-        bucketMetadata.creationDate,
-        bucketMetadata.name,
-        bucketMetadata.path,
-      )
-  }
-}
+)

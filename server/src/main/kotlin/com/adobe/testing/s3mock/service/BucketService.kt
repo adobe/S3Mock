@@ -35,7 +35,11 @@ import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.Region
 import com.adobe.testing.s3mock.dto.S3Object
 import com.adobe.testing.s3mock.dto.VersioningConfiguration
-import com.adobe.testing.s3mock.store.BucketMetadata
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.toBucket
+import com.adobe.testing.s3mock.model.toDeleteMarkerEntry
+import com.adobe.testing.s3mock.model.toObjectVersion
+import com.adobe.testing.s3mock.model.toS3Object
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.ObjectStore
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_BUCKET_LOCATION_NAME
@@ -77,7 +81,7 @@ open class BucketService(
         .listBuckets()
         .filter { it.name.startsWith(normalizedPrefix) }
         .sortedBy { it.name }
-        .map { Bucket.from(it) }
+        .map { it.toBucket() }
 
     bucketRegion?.let {
       buckets = buckets.filter { it.bucketRegion == it.toString() }
@@ -101,7 +105,7 @@ open class BucketService(
     return ListAllMyBucketsResult(Owner.DEFAULT_OWNER, Buckets(buckets), prefix, nextContinuationToken)
   }
 
-  fun getBucket(bucketName: String): Bucket = Bucket.from(bucketStore.getBucketMetadata(bucketName))
+  fun getBucket(bucketName: String): Bucket = bucketStore.getBucketMetadata(bucketName).toBucket()
 
   fun createBucket(
     bucketName: String,
@@ -111,16 +115,15 @@ open class BucketService(
     bucketInfo: BucketInfo?,
     locationInfo: LocationInfo?,
   ): Bucket =
-    Bucket.from(
-      bucketStore.createBucket(
+    bucketStore
+      .createBucket(
         bucketName,
         objectLockEnabled,
         objectOwnership,
         bucketRegion,
         bucketInfo,
         locationInfo,
-      ),
-    )
+      ).toBucket()
 
   fun deleteBucket(bucketName: String): Boolean {
     var bucketMetadata = bucketStore.getBucketMetadata(bucketName)
@@ -194,7 +197,7 @@ open class BucketService(
     return bucketStore
       .lookupIdsInBucket(prefix, bucketName)
       .mapNotNull { id -> objectStore.getS3ObjectMetadata(bucketMetadata, id, null) }
-      .map(S3Object::from)
+      .map { it.toS3Object() }
       .sortedBy(S3Object::key)
   }
 
@@ -207,31 +210,32 @@ open class BucketService(
     keyMarker: String?,
     versionIdMarker: String?,
   ): ListVersionsResult {
-    val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, encodingType, maxKeys)
+    // Pass null encodingType so listObjectsV1 returns decoded keys; bucket.getID() requires decoded keys.
+    // URL encoding is applied to the result fields below.
+    val result = listObjectsV1(bucketName, prefix, delimiter, keyMarker, null, maxKeys)
 
     val bucket = bucketStore.getBucketMetadata(bucketName)
-    val objectVersions = arrayListOf<ObjectVersion>()
-    val deleteMarkers = arrayListOf<DeleteMarkerEntry>()
+    val objectVersions = mutableListOf<ObjectVersion>()
+    val deleteMarkers = mutableListOf<DeleteMarkerEntry>()
     var nextVersionIdMarker: String? = null
 
     for (content in result.contents) {
       if (nextVersionIdMarker != null) break
 
-      val id = bucket.getID(content.key)
+      val id = bucket.getID(content.key) ?: continue
       if (bucket.isVersioningEnabled) {
-        val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id!!)
-        val versions = ArrayList<String?>(s3ObjectVersions.versions).apply { reverse() }
+        val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id)
 
-        for (s3ObjectVersion in versions) {
-          val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion)!!
+        for (s3ObjectVersion in s3ObjectVersions.versions.reversed()) {
+          val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion) ?: continue
           if (!meta.deleteMarker) {
             if (objectVersions.size > maxKeys) {
               nextVersionIdMarker = s3ObjectVersion
               break
             }
-            objectVersions += ObjectVersion.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
+            objectVersions += meta.toObjectVersion(s3ObjectVersions.latestVersion == s3ObjectVersion)
           } else {
-            deleteMarkers += DeleteMarkerEntry.from(meta, s3ObjectVersions.latestVersion == s3ObjectVersion)
+            deleteMarkers += meta.toDeleteMarkerEntry(s3ObjectVersions.latestVersion == s3ObjectVersion)
           }
         }
       } else {
@@ -239,20 +243,29 @@ open class BucketService(
       }
     }
 
+    val returnCommonPrefixes =
+      result.commonPrefixes?.let { prefixes ->
+        encodeUrlIfRequested(prefixes, encodingType) { it.copy(prefix = urlEncodeIgnoreSlashes(it.prefix ?: "")) }
+      }
+    val returnObjectVersions =
+      encodeUrlIfRequested(objectVersions, encodingType) { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
+    val returnDeleteMarkers =
+      encodeUrlIfRequested(deleteMarkers, encodingType) { it.copy(key = it.key?.let { k -> urlEncodeIgnoreSlashes(k) }) }
+
     return ListVersionsResult(
-      result.commonPrefixes,
-      deleteMarkers,
+      returnCommonPrefixes,
+      returnDeleteMarkers,
       delimiter,
-      result.encodingType,
+      encodingType,
       result.isTruncated,
-      keyMarker,
+      encodeUrlIfRequested(keyMarker, encodingType),
       result.maxKeys,
       result.name,
-      result.nextMarker,
-      nextVersionIdMarker,
-      result.prefix,
-      objectVersions,
-      versionIdMarker,
+      encodeUrlIfRequested(result.nextMarker, encodingType),
+      encodeUrlIfRequested(nextVersionIdMarker, encodingType),
+      encodeUrlIfRequested(result.prefix, encodingType),
+      returnObjectVersions,
+      encodeUrlIfRequested(versionIdMarker, encodingType),
     )
   }
 
@@ -286,20 +299,7 @@ open class BucketService(
     var contents = getS3Objects(bucketName, prefix)
 
     if (!fetchOwner) {
-      contents =
-        mapContents(contents) {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            it.key,
-            it.lastModified,
-            null,
-            null,
-            it.size,
-            it.storageClass,
-          )
-        }
+      contents = contents.map { it.copy(owner = null, restoreStatus = null) }
     }
 
     var nextContinuationToken: String? = null
@@ -322,31 +322,11 @@ open class BucketService(
       listObjectsPagingStateCache[nextContinuationToken] = contents[maxKeys - 1].key
     }
 
-    var returnDelimiter = delimiter
-    var returnPrefix = prefix
-    var returnStartAfter = startAfter
-    var returnCommonPrefixes = commonPrefixes
-
-    if (encodingType == "url") {
-      contents =
-        contents.map {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            urlEncodeIgnoreSlashes(it.key),
-            it.lastModified,
-            it.owner,
-            it.restoreStatus,
-            it.size,
-            it.storageClass,
-          )
-        }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnStartAfter = urlEncodeIgnoreSlashes(startAfter)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
-      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
-    }
+    val returnDelimiter = encodeUrlIfRequested(delimiter, encodingType)
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnStartAfter = encodeUrlIfRequested(startAfter, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
 
     return ListBucketResultV2(
       returnCommonPrefixes.map { Prefix(it) },
@@ -364,7 +344,7 @@ open class BucketService(
     )
   }
 
-  @Deprecated("")
+  @Deprecated("Long since replaced by listObjectsV2")
   fun listObjectsV1(
     bucketName: String,
     prefix: String?,
@@ -405,27 +385,9 @@ open class BucketService(
       }
     }
 
-    var returnPrefix = prefix
-    var returnCommonPrefixes = commonPrefixes
-
-    if (encodingType == "url") {
-      contents =
-        contents.map {
-          S3Object(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.etag,
-            urlEncodeIgnoreSlashes(it.key),
-            it.lastModified,
-            it.owner,
-            it.restoreStatus,
-            it.size,
-            it.storageClass,
-          )
-        }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
-    }
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
 
     return ListBucketResult(
       returnCommonPrefixes.map { Prefix(it) },

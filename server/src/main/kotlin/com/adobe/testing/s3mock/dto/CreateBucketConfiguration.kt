@@ -16,6 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.adobe.testing.s3mock.dto.serialization.LocationConstraintDeserializer
+import com.adobe.testing.s3mock.dto.serialization.LocationConstraintSerializer
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.databind.annotation.JsonDeserialize
@@ -25,21 +27,19 @@ import tools.jackson.databind.annotation.JsonSerialize
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucketConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("CreateBucketConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("CreateBucketConfiguration", namespace = S3_NS)
 data class CreateBucketConfiguration(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: BucketInfo?,
-  @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Location", namespace = S3_NS)
   val location: LocationInfo?,
   @param:JsonSerialize(using = LocationConstraintSerializer::class)
   @param:JsonDeserialize(using = LocationConstraintDeserializer::class)
-  @param:JsonProperty("LocationConstraint", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("LocationConstraint", namespace = S3_NS)
   val locationConstraint: LocationConstraint?,
 ) {
   fun regionFrom(): String? {
-    if (this.locationConstraint != null &&
-      this.locationConstraint.region != null
-    ) {
+    if (this.locationConstraint?.region != null) {
       return this.locationConstraint.region.toString()
     }
     return null

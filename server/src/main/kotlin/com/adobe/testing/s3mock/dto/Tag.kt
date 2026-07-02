@@ -23,16 +23,16 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Tag(
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("Value", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Value", namespace = S3_NS)
   val value: String,
 ) {
   /**
    * Constructor for Spring's automatic header conversion.
    */
   constructor(keyValuePair: String) : this(
-    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0],
-    keyValuePair.split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1],
+    keyValuePair.substringBefore('='),
+    keyValuePair.substringAfter('='),
   )
 }

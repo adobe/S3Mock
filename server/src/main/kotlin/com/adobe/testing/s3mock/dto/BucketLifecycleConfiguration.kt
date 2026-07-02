@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_LifecycleConfiguration.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LifecycleConfiguration", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("LifecycleConfiguration", namespace = S3_NS)
 data class BucketLifecycleConfiguration(
   @get:JacksonXmlElementWrapper(useWrapping = false)
-  @get:JacksonXmlProperty(localName = "Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @get:JacksonXmlProperty(localName = "Rule")
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JacksonXmlProperty(localName = "Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  @param:JsonProperty("Rule", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JacksonXmlProperty(localName = "Rule")
+  @param:JsonProperty("Rule", namespace = S3_NS)
   val rules: List<LifecycleRule>?,
 )

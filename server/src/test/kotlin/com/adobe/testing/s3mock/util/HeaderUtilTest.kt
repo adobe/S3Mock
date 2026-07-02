@@ -19,7 +19,7 @@ import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.StorageClass
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
+import com.adobe.testing.s3mock.model.S3ObjectMetadata
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders

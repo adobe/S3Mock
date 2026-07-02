@@ -13,20 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock.dto
+package com.adobe.testing.s3mock.dto.serialization
 
-import software.amazon.awssdk.utils.DateUtils
-import tools.jackson.core.JsonGenerator
-import tools.jackson.databind.SerializationContext
-import tools.jackson.databind.ValueSerializer
-import java.time.Instant
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 
-class InstantSerializer : ValueSerializer<Instant>() {
-  override fun serialize(
-    value: Instant,
-    gen: JsonGenerator,
-    ctxt: SerializationContext,
-  ) {
-    gen.writeString(DateUtils.formatIso8601Date(value))
-  }
+class EtagDeserializer : ValueDeserializer<String?>() {
+  override fun deserialize(
+    p: JsonParser,
+    ctxt: DeserializationContext,
+  ): String? = normalizeEtag(p.text)
 }

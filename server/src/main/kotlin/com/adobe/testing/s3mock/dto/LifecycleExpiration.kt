@@ -16,9 +16,8 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
-import tools.jackson.databind.annotation.JsonDeserialize
-import tools.jackson.databind.annotation.JsonSerialize
 import java.time.Instant
 
 /**
@@ -26,12 +25,11 @@ import java.time.Instant
  */
 @S3Verified(year = 2025)
 data class LifecycleExpiration(
-  @param:JsonSerialize(using = InstantSerializer::class)
-  @param:JsonDeserialize(using = InstantDeserializer::class)
-  @param:JsonProperty("Date", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
+  @param:JsonProperty("Date", namespace = S3_NS)
   val date: Instant?,
-  @param:JsonProperty("Days", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Days", namespace = S3_NS)
   val days: Int?,
-  @param:JsonProperty("ExpiredObjectDeleteMarker", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ExpiredObjectDeleteMarker", namespace = S3_NS)
   val expiredObjectDeleteMarker: Boolean?,
 )

@@ -40,16 +40,6 @@ enum class ObjectCannedACL(
   override fun toString(): String = this.value
 
   companion object {
-    fun fromValue(value: String): ObjectCannedACL? =
-      when (value) {
-        "private" -> PRIVATE
-        "public-read" -> PUBLIC_READ
-        "public-read-write" -> PUBLIC_READ_WRITE
-        "authenticated-read" -> AUTHENTICATED_READ
-        "aws-exec-read" -> AWS_EXEC_READ
-        "bucket-owner-read" -> BUCKET_OWNER_READ
-        "bucket-owner-full-control" -> BUCKET_OWNER_FULL_CONTROL
-        else -> null
-      }
+    fun fromValue(value: String): ObjectCannedACL? = entries.firstOrNull { it.toString() == value }
   }
 }

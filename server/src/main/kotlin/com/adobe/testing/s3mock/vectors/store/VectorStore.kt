@@ -40,6 +40,8 @@ class VectorStore(
 ) {
   private val lockStore: MutableMap<String, Any> = ConcurrentHashMap()
 
+  private fun lockFor(key: String): Any = lockStore.computeIfAbsent(key) { Any() }
+
   data class StoredVector(
     val key: String,
     val floats: FloatArray?,
@@ -54,8 +56,7 @@ class VectorStore(
     metadata: Map<String, Any?>?,
   ) {
     val lockKey = lockKey(bucketName, indexName, key)
-    lockStore.putIfAbsent(lockKey, Any())
-    synchronized(lockStore[lockKey]!!) {
+    synchronized(lockFor(lockKey)) {
       val dir = getVectorDir(bucketName, indexName, key)
       dir.mkdirs()
       dir.resolve(KEY_FILE).writeText(key, Charsets.UTF_8)
@@ -91,10 +92,11 @@ class VectorStore(
     indexName: String,
     key: String,
   ) {
+    val dir = getVectorDir(bucketName, indexName, key)
+    if (!dir.exists()) return
     val lockKey = lockKey(bucketName, indexName, key)
-    synchronized(lockStore[lockKey]!!) {
-      getVectorDir(bucketName, indexName, key).deleteRecursively()
-      lockStore.remove(lockKey)
+    synchronized(lockFor(lockKey)) {
+      dir.deleteRecursively()
     }
   }
 

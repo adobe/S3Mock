@@ -34,11 +34,6 @@ enum class DataRedundancy(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): DataRedundancy? =
-      when (value) {
-        "SingleAvailabilityZone" -> SINGLE_AVAILABILITY_ZONE
-        "SingleLocalZone" -> SINGLE_LOCAL_ZONE
-        else -> null
-      }
+    fun fromValue(value: String?): DataRedundancy? = enumFromValue<DataRedundancy>(value) { it.value }
   }
 }

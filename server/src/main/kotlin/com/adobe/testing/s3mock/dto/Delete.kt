@@ -26,8 +26,8 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 @S3Verified(year = 2025)
 data class Delete(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Object", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Object", namespace = S3_NS)
   val objectsToDelete: List<S3ObjectIdentifier>,
-  @param:JsonProperty("Quiet", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Quiet", namespace = S3_NS)
   val quiet: Boolean = false,
 )

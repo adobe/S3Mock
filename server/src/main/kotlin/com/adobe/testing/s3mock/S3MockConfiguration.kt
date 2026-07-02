@@ -26,7 +26,15 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @EnableConfigurationProperties(S3MockProperties::class)
 class S3MockConfiguration {
-  private lateinit var httpConnector: Connector
+  /**
+   * HTTP [Connector] for the additional plain-HTTP port configured via [S3MockProperties.httpPort].
+   * Exposed as a bean so it can be injected wherever the actual bound port is needed.
+   */
+  @Bean
+  fun httpConnector(properties: S3MockProperties): Connector =
+    Connector().apply {
+      port = properties.httpPort
+    }
 
   /**
    * Create a ServletWebServerFactory bean reconfigured for an additional HTTP port.
@@ -34,7 +42,10 @@ class S3MockConfiguration {
    * @return webServerFactory bean reconfigured for an additional HTTP port
    */
   @Bean
-  fun webServerFactory(properties: S3MockProperties): ServletWebServerFactory =
+  fun webServerFactory(
+    properties: S3MockProperties,
+    httpConnector: Connector,
+  ): ServletWebServerFactory =
     TomcatServletWebServerFactory().apply {
       this.addConnectorCustomizers(
         {
@@ -43,14 +54,6 @@ class S3MockConfiguration {
           it.setAllowBackslash(true)
         },
       )
-      addAdditionalConnectors(createHttpConnector(properties.httpPort))
+      addAdditionalConnectors(httpConnector)
     }
-
-  private fun createHttpConnector(httpPort: Int): Connector =
-    Connector().apply {
-      port = httpPort
-      this@S3MockConfiguration.httpConnector = this
-    }
-
-  fun getHttpConnector(): Connector = httpConnector
 }

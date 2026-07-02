@@ -34,11 +34,6 @@ enum class LocationType(
 
   companion object {
     @JsonCreator
-    fun fromValue(value: String): LocationType? =
-      when (value) {
-        "AvailabilityZone" -> AVAILABILITY_ZONE
-        "LocalZone" -> LOCAL_ZONE
-        else -> null
-      }
+    fun fromValue(value: String?): LocationType? = enumFromValue<LocationType>(value) { it.value }
   }
 }

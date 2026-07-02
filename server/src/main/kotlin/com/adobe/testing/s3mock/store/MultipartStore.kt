@@ -18,9 +18,11 @@ package com.adobe.testing.s3mock.store
 
 import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
+import com.adobe.testing.s3mock.dto.ChecksumFields
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.MultipartUpload
 import com.adobe.testing.s3mock.dto.ObjectPart
@@ -28,8 +30,12 @@ import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.BucketMetadata
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
+import com.adobe.testing.s3mock.model.PartMetadata
 import com.adobe.testing.s3mock.util.AwsHttpHeaders
 import com.adobe.testing.s3mock.util.BoundedInputStream
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,13 +48,13 @@ import java.io.SequenceInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Collections
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.outputStream
 
@@ -56,12 +62,6 @@ open class MultipartStore(
   private val objectStore: ObjectStore,
   private val objectMapper: ObjectMapper,
 ) : StoreBase() {
-  /**
-   * This map stores one lock object per MultipartUpload ID.
-   * Any method modifying the underlying file must acquire the lock object before the modification.
-   */
-  private val lockStore: MutableMap<UUID, Any> = ConcurrentHashMap()
-
   fun createMultipartUpload(
     bucket: BucketMetadata,
     key: String,
@@ -105,7 +105,7 @@ open class MultipartStore(
       MultipartUpload(
         checksumAlgorithm,
         resolvedChecksumType,
-        Date(),
+        Instant.now().truncatedTo(ChronoUnit.MILLIS),
         initiator,
         key,
         owner,
@@ -126,7 +126,6 @@ open class MultipartStore(
         resolvedChecksumType,
         checksumAlgorithm,
       )
-    lockStore.putIfAbsent(uploadId, Any())
     writeMetafile(bucket, multipartUploadInfo)
 
     return upload
@@ -137,7 +136,7 @@ open class MultipartStore(
     prefix: String?,
   ): List<MultipartUpload> {
     val multipartsFolder = getMultipartsFolder(bucketMetadata)
-    if (!multipartsFolder.toFile().exists()) {
+    if (!multipartsFolder.exists()) {
       return emptyList()
     }
     try {
@@ -166,33 +165,21 @@ open class MultipartStore(
     uploadId: UUID,
     includeCompleted: Boolean,
   ): MultipartUpload {
-    val uploadMetadata = getUploadMetadata(bucketMetadata, uploadId)
-    if (uploadMetadata != null) {
-      if (includeCompleted) {
-        return uploadMetadata.upload
-      } else {
-        require(!uploadMetadata.completed) { "No active MultipartUpload found with uploadId: $uploadId" }
-        return uploadMetadata.upload
-      }
-    } else {
-      throw IllegalArgumentException("No MultipartUpload found with uploadId: $uploadId")
-    }
+    val info =
+      getUploadMetadata(bucketMetadata, uploadId)
+        ?: throw IllegalArgumentException("No MultipartUpload found with uploadId: $uploadId")
+    if (!includeCompleted) require(!info.completed) { "No active MultipartUpload found with uploadId: $uploadId" }
+    return info.upload
   }
 
   fun abortMultipartUpload(
     bucket: BucketMetadata,
-    id: UUID,
     uploadId: UUID,
   ) {
     val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
     if (multipartUploadInfo != null) {
-      synchronized(lockStore[uploadId]!!) {
-        try {
-          getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
-        } catch (e: IOException) {
-          throw IllegalStateException("Could not delete multipart-directory $uploadId", e)
-        }
-        lockStore.remove(uploadId)
+      synchronized(lockFor(uploadId)) {
+        getPartsFolder(bucket, uploadId).toFile().deleteRecursively()
       }
     }
   }
@@ -256,7 +243,7 @@ open class MultipartStore(
 
       // Read per-part metadata under the lock to avoid racing with abort or ListParts
       val objectParts =
-        synchronized(lockStore[uploadId]!!) {
+        synchronized(lockFor(uploadId)) {
           readObjectParts(bucket, uploadId, parts)
         }
 
@@ -281,7 +268,7 @@ open class MultipartStore(
         )
       // delete part files, then .partmeta.json sidecars (under lock) and update MultipartInfo
       partsPaths.forEach { runCatching { it.toFile().deleteRecursively() } }
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         partsPaths.forEach { path ->
           runCatching {
             getPartMetaPath(
@@ -302,10 +289,10 @@ open class MultipartStore(
         completedUploadInfo.bucket,
         key,
         etag,
-        completedUploadInfo,
-        checksumFor,
+        completedUploadInfo.encryptionHeaders,
+        checksumFor ?: completedUploadInfo.checksum,
         s3ObjectMetadata.checksumType,
-        checksumAlgorithm,
+        checksumAlgorithm ?: completedUploadInfo.checksumAlgorithm,
         s3ObjectMetadata.versionId,
       )
     } catch (e: IOException) {
@@ -322,7 +309,7 @@ open class MultipartStore(
   ): List<Part> {
     val partsPath = getPartsFolder(bucket, uploadId)
     try {
-      return synchronized(lockStore[uploadId]!!) {
+      return synchronized(lockFor(uploadId)) {
         partsPath
           .listDirectoryEntries("*$PART_SUFFIX")
           .map {
@@ -337,7 +324,7 @@ open class MultipartStore(
             } else {
               // Fall back to on-the-fly reconstruction (no checksum, e.g. copy-part uploads)
               val partMd5 = DigestUtil.hexDigest(file)
-              Part(partNumber, partMd5, Date(file.lastModified()), file.length())
+              Part(partNumber, normalizeEtag(partMd5), Instant.ofEpochMilli(file.lastModified()), file.length())
             }
           }.sortedBy { it.partNumber }
           .toList()
@@ -434,10 +421,7 @@ open class MultipartStore(
   private fun createPartsFolder(
     bucket: BucketMetadata,
     uploadId: UUID,
-  ): Boolean {
-    val partsFolder = getPartsFolder(bucket, uploadId).toFile()
-    return partsFolder.mkdirs()
-  }
+  ): Boolean = runCatching { getPartsFolder(bucket, uploadId).createDirectories() }.isSuccess
 
   private fun getMultipartsFolder(bucket: BucketMetadata): Path = Paths.get(bucket.path.toString(), MULTIPARTS_FOLDER)
 
@@ -464,7 +448,7 @@ open class MultipartStore(
     val metaPath = getUploadMetadataPath(bucket, uploadId)
 
     if (metaPath.exists()) {
-      synchronized(lockStore[uploadId]!!) {
+      synchronized(lockFor(uploadId)) {
         try {
           return objectMapper.readValue(
             metaPath.toFile(),
@@ -482,15 +466,14 @@ open class MultipartStore(
     bucket: BucketMetadata,
     uploadInfo: MultipartUploadInfo,
   ) {
-    val uploadId = uploadInfo.upload.uploadId
-    try {
-      synchronized(lockStore[UUID.fromString(uploadId)]!!) {
-        val metaFile = getUploadMetadataPath(bucket, UUID.fromString(uploadId)).toFile()
-        objectMapper.writeValue(metaFile, uploadInfo)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write upload metadata-file $uploadId", e)
-    }
+    val uploadUuid = UUID.fromString(uploadInfo.upload.uploadId)
+    writeLockedJson(
+      uploadUuid,
+      getUploadMetadataPath(bucket, uploadUuid).toFile(),
+      uploadInfo,
+      "upload metadata-file ${uploadInfo.upload.uploadId}",
+      objectMapper,
+    )
   }
 
   private fun verifyMultipartUploadPreparation(
@@ -504,8 +487,8 @@ open class MultipartStore(
     check(
       multipartUploadInfo != null &&
         partsFolder != null &&
-        partsFolder.toFile().exists() &&
-        partsFolder.toFile().isDirectory,
+        partsFolder.exists() &&
+        partsFolder.isDirectory(),
     ) {
       "Multipart Request was not prepared. bucket=$bucket, id=$id, uploadId=$uploadId, partsFolder=$partsFolder"
     }
@@ -539,14 +522,14 @@ open class MultipartStore(
         completedParts.forEach { part ->
           if (part.checksum(checksumAlgorithmToValidate) == null) {
             throw S3Exception.completeRequestMissingChecksum(
-              checksumAlgorithmToValidate.toString().lowercase(Locale.getDefault()),
+              checksumAlgorithmToValidate.toString().lowercase(),
               part.partNumber,
             )
           }
         }
       }
       if (checksumToValidate != null) {
-        DigestUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
+        ChecksumUtil.verifyChecksum(checksumToValidate, checksumFor, checksumAlgorithmToValidate)
       }
     }
 
@@ -558,7 +541,7 @@ open class MultipartStore(
     uploadInfo: MultipartUploadInfo,
   ): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
-      DigestUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
+      ChecksumUtil.checksumMultipart(paths, algo.toChecksumAlgorithm())
     }
 
   private fun checksumFor(
@@ -566,7 +549,7 @@ open class MultipartStore(
     uploadInfo: MultipartUploadInfo,
   ): String? =
     uploadInfo.checksumAlgorithm?.let { algo ->
-      DigestUtil.checksumFor(path, algo.toChecksumAlgorithm())
+      ChecksumUtil.checksumFor(path, algo.toChecksumAlgorithm())
     }
 
   private fun getPartMetaPath(
@@ -580,28 +563,22 @@ open class MultipartStore(
     uploadId: UUID,
     partNumber: Int,
     meta: PartMetadata,
-  ) {
-    try {
-      synchronized(lockStore[uploadId]!!) {
-        objectMapper.writeValue(getPartMetaPath(bucket, uploadId, partNumber).toFile(), meta)
-      }
-    } catch (e: IOException) {
-      throw IllegalStateException("Could not write part metadata file uploadId=$uploadId, partNumber=$partNumber", e)
-    }
-  }
+  ) = writeLockedJson(
+    uploadId,
+    getPartMetaPath(bucket, uploadId, partNumber).toFile(),
+    meta,
+    "part metadata file uploadId=$uploadId, partNumber=$partNumber",
+    objectMapper,
+  )
 
   /** Builds a [Part] DTO from a persisted [PartMetadata], routing the checksum to the correct field. */
   private fun partFromMetadata(meta: PartMetadata): Part =
     Part(
-      partNumber = meta.partNumber,
-      etag = meta.etag,
-      lastModified = Date(meta.lastModified),
-      size = meta.size,
-      checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
-      checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
-      checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
-      checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
-      checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
+      meta.partNumber,
+      normalizeEtag(meta.etag),
+      Instant.ofEpochMilli(meta.lastModified),
+      meta.size,
+      ChecksumFields.from(meta.checksumAlgorithm, meta.checksum),
     )
 
   /** Builds the [ObjectPart] list from persisted [PartMetadata] for the given [completedParts]. */
@@ -614,14 +591,10 @@ open class MultipartStore(
       val metaPath = getPartMetaPath(bucket, uploadId, completed.partNumber)
       if (metaPath.exists()) {
         val meta = objectMapper.readValue(metaPath.toFile(), PartMetadata::class.java)
-        ObjectPart(
-          checksumCRC32 = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32) meta.checksum else null,
-          checksumCRC32C = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC32C) meta.checksum else null,
-          checksumCRC64NVME = if (meta.checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) meta.checksum else null,
-          checksumSHA1 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA1) meta.checksum else null,
-          checksumSHA256 = if (meta.checksumAlgorithm == ChecksumAlgorithm.SHA256) meta.checksum else null,
-          partNumber = meta.partNumber,
-          size = meta.size,
+        ObjectPart.from(
+          ChecksumFields.from(meta.checksumAlgorithm, meta.checksum),
+          meta.partNumber,
+          meta.size,
         )
       } else {
         null
@@ -644,7 +617,8 @@ open class MultipartStore(
             throw IllegalStateException("Can't access path $path", e)
           }
         }
-      return SequenceInputStream(Collections.enumeration(inputs))
+      return inputs.reduceOrNull { combined, next -> SequenceInputStream(combined, next) }
+        ?: InputStream.nullInputStream()
     }
   }
 }

@@ -19,17 +19,17 @@ import com.adobe.testing.s3mock.DtoTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import java.util.Date
+import java.time.Instant
 
 internal class CopyPartResultTest {
   @Test
   fun testSerialization(testInfo: TestInfo) {
     val iut =
-      CopyPartResult(
+      CopyPartResult.from(
         ChecksumAlgorithm.CRC32,
         "checksum",
-        "99f2fdceebf20fb2e891810adfb0eb71",
-        Date(1514477008120L),
+        "\"99f2fdceebf20fb2e891810adfb0eb71\"",
+        Instant.ofEpochMilli(1514477008120L),
       )
     assertThat(iut).isNotNull()
     DtoTestUtil.serializeAndAssertXML(iut, testInfo)

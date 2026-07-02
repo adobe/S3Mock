@@ -24,15 +24,15 @@ import com.fasterxml.jackson.annotation.JsonRootName
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListAllMyBucketsResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("ListAllMyBucketsResult", namespace = S3_NS)
 data class ListAllMyBucketsResult(
-  @param:JsonProperty("Buckets", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Buckets", namespace = S3_NS)
   val buckets: Buckets?,
-  @param:JsonProperty("ContinuationToken", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ContinuationToken", namespace = S3_NS)
   val continuationToken: String?,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner?,
-  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Prefix", namespace = S3_NS)
   val prefix: String?,
 ) {
   constructor(

@@ -15,8 +15,6 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import java.util.Objects
-
 /**
  * Key request value object.
  * Removes the trailing slash extracted from paths by Spring.
@@ -30,14 +28,5 @@ import java.util.Objects
 class ObjectKey(
   key: String?,
 ) {
-  val key: String
-
-  init {
-    var key = key
-    Objects.requireNonNull<String?>(key)
-    if (key!!.startsWith("/")) {
-      key = key.substring(1)
-    }
-    this.key = key
-  }
+  val key: String = requireNotNull(key).removePrefix("/")
 }

@@ -16,8 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
 import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
@@ -26,26 +24,17 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("GetObjectAttributesOutput", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("GetObjectAttributesOutput", namespace = S3_NS)
 data class GetObjectAttributesOutput(
-  @param:JsonProperty("Checksum", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Checksum", namespace = S3_NS)
   val checksum: Checksum?,
-  @param:JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
   val etag: String?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("ObjectParts", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ObjectParts", namespace = S3_NS)
   val objectParts: List<GetObjectAttributesParts>?,
-  @param:JsonProperty("ObjectSize", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ObjectSize", namespace = S3_NS)
   val objectSize: Long?,
-  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StorageClass", namespace = S3_NS)
   val storageClass: StorageClass?,
-) {
-  fun from(metadata: S3ObjectMetadata): GetObjectAttributesOutput =
-    GetObjectAttributesOutput(
-      Checksum.from(metadata),
-      normalizeEtag(metadata.etag),
-      null,
-      metadata.size.toLong(),
-      metadata.storageClass,
-    )
-}
+)

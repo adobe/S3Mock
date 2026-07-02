@@ -51,7 +51,7 @@ internal class CopySourceTest {
   fun nullCopySource() {
     assertThatThrownBy {
       CopySource.from(null)
-    }.isInstanceOf(NullPointerException::class.java)
+    }.isInstanceOf(IllegalArgumentException::class.java)
   }
 
   @Test

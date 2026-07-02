@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.adobe.testing.s3mock.store
+package com.adobe.testing.s3mock.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -31,7 +31,7 @@ data class S3ObjectVersions(
   constructor(id: UUID) : this(id, mutableListOf())
 
   val versions: List<String>
-    get() = java.util.Collections.unmodifiableList(_versions)
+    get() = _versions.toList()
 
   fun createVersion(): String {
     val versionId = UUID.randomUUID().toString()
@@ -41,12 +41,7 @@ data class S3ObjectVersions(
 
   @get:JsonIgnore
   val latestVersion: String?
-    get() {
-      if (_versions.isEmpty()) {
-        return null
-      }
-      return _versions[_versions.size - 1]
-    }
+    get() = _versions.lastOrNull()
 
   fun deleteVersion(versionId: String) {
     _versions.remove(versionId)

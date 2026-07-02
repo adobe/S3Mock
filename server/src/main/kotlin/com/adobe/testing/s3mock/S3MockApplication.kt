@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock
 
 import com.adobe.testing.s3mock.store.KmsKeyStore
+import org.apache.catalina.connector.Connector
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -51,7 +52,7 @@ class S3MockApplication(
   private val context: ConfigurableApplicationContext,
   private val kmsKeyStore: KmsKeyStore,
   private val environment: Environment,
-  private val config: S3MockConfiguration,
+  private val httpConnector: Connector,
 ) {
   /**
    * Stops the server.
@@ -82,7 +83,7 @@ class S3MockApplication(
         a separate JVM, or run the Docker container.""",
   )
   val httpPort: Int
-    get() = config.getHttpConnector().localPort
+    get() = httpConnector.localPort
 
   /**
    * Registers a valid KMS key reference on the mock server.

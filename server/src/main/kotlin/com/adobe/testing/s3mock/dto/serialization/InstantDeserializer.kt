@@ -13,22 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto.serialization
 
-package com.adobe.testing.s3mock.store
+import software.amazon.awssdk.utils.DateUtils
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
+import java.time.Instant
 
-import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
-
-/**
- * Persisted per-part metadata written alongside each `<partNumber>.part` file.
- * Enables [MultipartStore.getMultipartUploadParts] to return checksums via ListParts,
- * and [MultipartStore.completeMultipartUpload] to populate [S3ObjectMetadata.parts] for
- * GetObjectAttributes.
- */
-data class PartMetadata(
-  val partNumber: Int,
-  val etag: String?,
-  val size: Long,
-  val lastModified: Long,
-  val checksum: String?,
-  val checksumAlgorithm: ChecksumAlgorithm?,
-)
+class InstantDeserializer : ValueDeserializer<Instant?>() {
+  override fun deserialize(
+    p: JsonParser,
+    ctxt: DeserializationContext,
+  ): Instant {
+    val deserialized = p.readValueAs(String::class.java)
+    return DateUtils.parseIso8601Date(deserialized)
+  }
+}

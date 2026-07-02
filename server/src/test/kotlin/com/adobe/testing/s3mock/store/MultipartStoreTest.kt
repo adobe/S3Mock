@@ -19,10 +19,11 @@ import com.adobe.testing.s3mock.S3Exception
 import com.adobe.testing.s3mock.dto.ChecksumAlgorithm
 import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompletedPart
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.Owner
 import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.StorageClass
-import com.adobe.testing.s3mock.util.DigestUtil
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.HeaderUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -46,8 +47,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.MessageDigest
+import java.time.Instant
 import java.util.Collections
-import java.util.Date
 import java.util.UUID
 import kotlin.io.path.outputStream
 
@@ -106,7 +107,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           .isDirectory()
       }
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   @Test
@@ -155,7 +156,7 @@ internal class MultipartStoreTest : StoreTestBase() {
         ).toFile(),
     ).exists()
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   @Test
@@ -394,9 +395,9 @@ internal class MultipartStoreTest : StoreTestBase() {
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
-    val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
-    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
-    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
+    val checksum1 = ChecksumUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = ChecksumUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -482,8 +483,8 @@ internal class MultipartStoreTest : StoreTestBase() {
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
 
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
-    val checksum1 = DigestUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
-    val checksum2 = DigestUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
+    val checksum1 = ChecksumUtil.checksumFor(tempFile1, DefaultChecksumAlgorithm.CRC32)
+    val checksum2 = ChecksumUtil.checksumFor(tempFile2, DefaultChecksumAlgorithm.CRC32)
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
     val multipartUpload =
@@ -543,7 +544,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val checksumAlgorithm = ChecksumAlgorithm.CRC32
     val tempFile2 = Files.createTempFile("", "")
     part2.toByteArray().inputStream().transferTo(tempFile2.outputStream())
-    val checksum = DigestUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumMultipart(listOf(tempFile1, tempFile2), DefaultChecksumAlgorithm.CRC32)
 
     val userMetadata = mapOf("${HeaderUtil.HEADER_X_AMZ_META_PREFIX}test" to "test")
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -674,18 +675,18 @@ internal class MultipartStoreTest : StoreTestBase() {
       assertThat(it[1]).isEqualTo(expectedPart2)
     }
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
   }
 
   private fun prepareExpectedPart(
     partNumber: Int,
-    lastModified: Date,
+    lastModified: Instant,
     content: String,
   ): Part {
     val md5 = MessageDigest.getInstance("MD5")
     return Part(
       partNumber,
-      md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) },
+      normalizeEtag(md5.digest(content.toByteArray()).joinToString("") { "%02x".format(it) }),
       lastModified,
       content.toByteArray().size.toLong(),
     )
@@ -754,7 +755,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     val part1 = "Part1"
     val tempFile = Files.createTempFile("", "")
     part1.toByteArray().inputStream().transferTo(tempFile.outputStream())
-    val checksum = DigestUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.CRC32)
+    val checksum = ChecksumUtil.checksumFor(tempFile, DefaultChecksumAlgorithm.CRC32)
     requireNotNull(checksum)
 
     val bucket = metadataFrom(TEST_BUCKET_NAME)
@@ -992,7 +993,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     )
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).hasSize(1)
 
-    multipartStore.abortMultipartUpload(bucket, id, uploadId)
+    multipartStore.abortMultipartUpload(bucket, uploadId)
 
     assertThat(multipartStore.listMultipartUploads(bucket, NO_PREFIX)).isEmpty()
     assertThat(
@@ -1094,7 +1095,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           "$partNumber.part",
         ).toFile(),
     ).exists()
-    multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), destinationId, uploadId)
+    multipartStore.abortMultipartUpload(metadataFrom(TEST_BUCKET_NAME), uploadId)
   }
 
   @Test
@@ -1166,7 +1167,7 @@ internal class MultipartStoreTest : StoreTestBase() {
           "$partNumber.part",
         ).toFile(),
     ).exists()
-    multipartStore.abortMultipartUpload(bucketMetadata, destinationId, uploadId)
+    multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
   }
 
   @Test
@@ -1276,7 +1277,7 @@ internal class MultipartStoreTest : StoreTestBase() {
     BUCKET_NAMES.forEach { bucket ->
       val bucketMetadata = metadataFrom(bucket)
       multipartStore.listMultipartUploads(bucketMetadata, NO_PREFIX).forEach {
-        multipartStore.abortMultipartUpload(bucketMetadata, UUID.randomUUID(), UUID.fromString(it.uploadId))
+        multipartStore.abortMultipartUpload(bucketMetadata, UUID.fromString(it.uploadId))
       }
     }
   }

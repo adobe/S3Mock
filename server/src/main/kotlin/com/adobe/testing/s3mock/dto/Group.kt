@@ -26,7 +26,7 @@ import java.net.URI
 @S3Verified(year = 2025)
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "xsi:type")
 data class Group(
-  @param:JsonProperty("URI", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("URI", namespace = S3_NS)
   val uri: URI?,
 ) : Grantee {
   companion object {

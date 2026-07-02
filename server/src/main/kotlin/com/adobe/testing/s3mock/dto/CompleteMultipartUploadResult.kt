@@ -15,161 +15,74 @@
  */
 package com.adobe.testing.s3mock.dto
 
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
+import com.adobe.testing.s3mock.dto.serialization.EtagDeserializer
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonRootName
+import tools.jackson.databind.annotation.JsonDeserialize
 
 /**
  * Result to be returned when completing a multipart request.
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
  */
-@JsonRootName("CompleteMultipartUploadResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-class CompleteMultipartUploadResult(
-  @param:JsonProperty("Bucket", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("CompleteMultipartUploadResult", namespace = S3_NS)
+data class CompleteMultipartUploadResult(
+  @param:JsonProperty("Bucket", namespace = S3_NS)
   val bucket: String?,
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String? = null,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String? = null,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String? = null,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String? = null,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String? = null,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType? = null,
-  @JsonProperty("ETag", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  etag: String?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ETag", namespace = S3_NS)
+  @param:JsonDeserialize(using = EtagDeserializer::class)
+  @get:JsonProperty("ETag", namespace = S3_NS)
+  val etag: String?,
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("Location", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Location", namespace = S3_NS)
   val location: String?,
-  @field:JsonIgnore val multipartUploadInfo: MultipartUploadInfo,
+  /** Encryption headers from the originating multipart upload — echoed in the HTTP response, not serialized. */
+  @field:JsonIgnore val encryptionHeaders: Map<String, String> = emptyMap(),
   @field:JsonIgnore val versionId: String?,
   @field:JsonIgnore val checksum: String? = null,
 ) {
-  @JsonIgnore
-  val etag: String?
-
-  init {
-    var etag = etag
-    etag = normalizeEtag(etag)
-    this.etag = etag
-  }
-
   companion object {
     fun from(
       location: String?,
       bucket: String?,
       key: String,
       etag: String?,
-      multipartUploadInfo: MultipartUploadInfo,
+      encryptionHeaders: Map<String, String> = emptyMap(),
       checksum: String?,
       checksumType: ChecksumType?,
       checksumAlgorithm: ChecksumAlgorithm?,
       versionId: String?,
     ): CompleteMultipartUploadResult {
-      val usedAlgorithm = checksumAlgorithm ?: multipartUploadInfo.checksumAlgorithm
-      val usedChecksum = checksum ?: multipartUploadInfo.checksum
-
-      if (usedChecksum == null) {
-        return CompleteMultipartUploadResult(
-          bucket = bucket,
-          checksumType = checksumType,
-          etag = etag,
-          key = key,
-          location = location,
-          multipartUploadInfo = multipartUploadInfo,
-          versionId = versionId,
-        )
-      }
-
-      return when (usedAlgorithm) {
-        ChecksumAlgorithm.CRC32 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC32 = usedChecksum,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.CRC32C -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC32C = usedChecksum,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.CRC64NVME -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumCRC64NVME = usedChecksum,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.SHA1 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumSHA1 = usedChecksum,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        ChecksumAlgorithm.SHA256 -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumSHA256 = usedChecksum,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-            checksum = checksum,
-          )
-        }
-
-        else -> {
-          CompleteMultipartUploadResult(
-            bucket = bucket,
-            checksumType = checksumType,
-            etag = etag,
-            key = key,
-            location = location,
-            multipartUploadInfo = multipartUploadInfo,
-            versionId = versionId,
-          )
-        }
-      }
+      val fields = ChecksumFields.from(checksumAlgorithm, checksum)
+      return CompleteMultipartUploadResult(
+        bucket = bucket,
+        checksumCRC32 = fields.checksumCRC32,
+        checksumCRC32C = fields.checksumCRC32C,
+        checksumCRC64NVME = fields.checksumCRC64NVME,
+        checksumSHA1 = fields.checksumSHA1,
+        checksumSHA256 = fields.checksumSHA256,
+        checksumType = checksumType,
+        etag = normalizeEtag(etag),
+        key = key,
+        location = location,
+        encryptionHeaders = encryptionHeaders,
+        versionId = versionId,
+        checksum = checksum,
+      )
     }
   }
 }

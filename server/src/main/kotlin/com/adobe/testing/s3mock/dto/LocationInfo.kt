@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class LocationInfo(
-  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Name", namespace = S3_NS)
   val name: String?,
-  @param:JsonProperty("Type", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Type", namespace = S3_NS)
   val type: LocationType?,
 )

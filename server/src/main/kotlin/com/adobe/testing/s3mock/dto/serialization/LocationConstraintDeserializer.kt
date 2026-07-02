@@ -13,20 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.adobe.testing.s3mock.dto
+package com.adobe.testing.s3mock.dto.serialization
 
-import software.amazon.awssdk.utils.DateUtils
+import com.adobe.testing.s3mock.dto.LocationConstraint
 import tools.jackson.core.JsonParser
 import tools.jackson.databind.DeserializationContext
 import tools.jackson.databind.ValueDeserializer
-import java.time.Instant
 
-class InstantDeserializer : ValueDeserializer<Instant?>() {
+/**
+ * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax).
+ */
+class LocationConstraintDeserializer : ValueDeserializer<LocationConstraint?>() {
   override fun deserialize(
     p: JsonParser,
-    ctxt: DeserializationContext,
-  ): Instant {
+    ctxt: DeserializationContext?,
+  ): LocationConstraint {
     val deserialized = p.readValueAs(String::class.java)
-    return DateUtils.parseIso8601Date(deserialized)
+    return LocationConstraint(deserialized)
   }
 }

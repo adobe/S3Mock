@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,32 +25,32 @@ import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html)
  */
 @S3Verified(year = 2025)
-@JsonRootName("ListBucketResult", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("ListBucketResult", namespace = S3_NS)
 data class ListBucketResultV2(
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("CommonPrefixes", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("CommonPrefixes", namespace = S3_NS)
   val commonPrefixes: List<Prefix>?,
   @param:JacksonXmlElementWrapper(useWrapping = false)
-  @param:JsonProperty("Contents", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Contents", namespace = S3_NS)
   val contents: List<S3Object>,
-  @param:JsonProperty("ContinuationToken", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ContinuationToken", namespace = S3_NS)
   val continuationToken: String?,
-  @param:JsonProperty("Delimiter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Delimiter", namespace = S3_NS)
   val delimiter: String?,
-  @param:JsonProperty("EncodingType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("EncodingType", namespace = S3_NS)
   val encodingType: String?,
-  @param:JsonProperty("IsTruncated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("IsTruncated", namespace = S3_NS)
   val isTruncated: Boolean,
-  @param:JsonProperty("KeyCount", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("KeyCount", namespace = S3_NS)
   val keyCount: String,
-  @param:JsonProperty("MaxKeys", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("MaxKeys", namespace = S3_NS)
   val maxKeys: Int,
-  @param:JsonProperty("Name", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Name", namespace = S3_NS)
   val name: String?,
-  @param:JsonProperty("NextContinuationToken", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("NextContinuationToken", namespace = S3_NS)
   val nextContinuationToken: String?,
-  @param:JsonProperty("Prefix", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Prefix", namespace = S3_NS)
   val prefix: String?,
-  @param:JsonProperty("StartAfter", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StartAfter", namespace = S3_NS)
   val startAfter: String?,
 )

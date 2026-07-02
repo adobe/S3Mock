@@ -13,29 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package com.adobe.testing.s3mock.dto
 
-package com.adobe.testing.s3mock.util
+/** AWS S3 XML namespace URI, declared once and referenced everywhere via [S3_NS]. */
+const val S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
-object EtagUtil {
-  /**
-   * Returns etag in normalized form with surrounding quotes.
-   * This normalized form is persisted so that S3Mock can conform to RFC2616 / RFC7232.
-   * [RFC2616](https://www.rfc-editor.org/rfc/rfc2616#section-14.19)
-   * [RFC7232](https://www.rfc-editor.org/rfc/rfc7232)
-   */
-  @JvmStatic
-  fun normalizeEtag(etag: String?): String? =
-    when {
-      etag == null -> {
-        null
-      }
-
-      etag.startsWith("\"") && etag.endsWith("\"") -> {
-        etag
-      }
-
-      else -> {
-        "\"$etag\""
-      }
-    }
-}
+/** ISO-8601 date-time format with milliseconds used in S3 XML responses. */
+const val S3_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"

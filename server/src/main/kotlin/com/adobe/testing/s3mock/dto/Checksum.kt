@@ -16,7 +16,6 @@
 package com.adobe.testing.s3mock.dto
 
 import com.adobe.testing.S3Verified
-import com.adobe.testing.s3mock.store.S3ObjectMetadata
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -24,33 +23,16 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 @S3Verified(year = 2025)
 data class Checksum(
-  @param:JsonProperty("ChecksumCRC32", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32", namespace = S3_NS)
   val checksumCRC32: String?,
-  @param:JsonProperty("ChecksumCRC32C", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC32C", namespace = S3_NS)
   val checksumCRC32C: String?,
-  @param:JsonProperty("ChecksumCRC64NVME", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumCRC64NVME", namespace = S3_NS)
   val checksumCRC64NVME: String?,
-  @param:JsonProperty("ChecksumSHA1", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA1", namespace = S3_NS)
   val checksumSHA1: String?,
-  @param:JsonProperty("ChecksumSHA256", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumSHA256", namespace = S3_NS)
   val checksumSHA256: String?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-) {
-  companion object {
-    fun from(s3ObjectMetadata: S3ObjectMetadata): Checksum? {
-      val checksumAlgorithm = s3ObjectMetadata.checksumAlgorithm
-      if (checksumAlgorithm != null) {
-        return Checksum(
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC32) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC32C) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.CRC64NVME) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.SHA1) s3ObjectMetadata.checksum else null,
-          if (checksumAlgorithm == ChecksumAlgorithm.SHA256) s3ObjectMetadata.checksum else null,
-          s3ObjectMetadata.checksumType,
-        )
-      }
-      return null
-    }
-  }
-}
+)

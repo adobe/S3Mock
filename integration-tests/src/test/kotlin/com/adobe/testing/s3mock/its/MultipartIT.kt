@@ -16,6 +16,7 @@
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.S3Exception.Companion.PRECONDITION_FAILED
+import com.adobe.testing.s3mock.util.ChecksumUtil
 import com.adobe.testing.s3mock.util.DigestUtil
 import com.adobe.testing.s3mock.util.DigestUtil.hexDigest
 import org.assertj.core.api.Assertions.assertThat
@@ -75,7 +76,7 @@ internal class MultipartIT : S3TestBase() {
         AsyncRequestBody.fromFile(UPLOAD_FILE),
       ).join()
       .also {
-        assertThat(it.checksumCRC32()).isEqualTo(DigestUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.CRC32))
+        assertThat(it.checksumCRC32()).isEqualTo(ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, DefaultChecksumAlgorithm.CRC32))
       }
 
     s3AsyncClient.waiter().waitUntilObjectExists {
@@ -215,7 +216,7 @@ internal class MultipartIT : S3TestBase() {
       )
 
     val checksum =
-      DigestUtil.checksumMultipart(
+      ChecksumUtil.checksumMultipart(
         listOf(UPLOAD_FILE_PATH),
         DefaultChecksumAlgorithm.CRC32,
       )
@@ -321,7 +322,7 @@ internal class MultipartIT : S3TestBase() {
       )
 
     val checksum =
-      DigestUtil.checksumFor(
+      ChecksumUtil.checksumFor(
         UPLOAD_FILE_PATH,
         DefaultChecksumAlgorithm.CRC64NVME,
       )
@@ -465,7 +466,7 @@ internal class MultipartIT : S3TestBase() {
     val uploadId = initiateResult.uploadId()
 
     // upload part 1, >5MB
-    val part1ExpectedChecksum = DigestUtil.checksumFor(part1Path, checksumAlgorithm)
+    val part1ExpectedChecksum = ChecksumUtil.checksumFor(part1Path, checksumAlgorithm)
     val part1Response =
       s3Client.uploadPart(
         {
@@ -481,7 +482,7 @@ internal class MultipartIT : S3TestBase() {
     assertThat(part1Response.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(part1ExpectedChecksum)
 
     // upload part 2, <5MB (last part may be smaller)
-    val part2ExpectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val part2ExpectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
     val part2Response =
       s3Client.uploadPart(
         {
@@ -498,7 +499,7 @@ internal class MultipartIT : S3TestBase() {
 
     // COMPOSITE: final checksum = checksum-of-part-checksums with -N suffix
     val expectedCompositeChecksum =
-      DigestUtil.checksumMultipart(listOf(part1Path, UPLOAD_FILE_PATH), checksumAlgorithm)
+      ChecksumUtil.checksumMultipart(listOf(part1Path, UPLOAD_FILE_PATH), checksumAlgorithm)
 
     val completeResult =
       s3Client.completeMultipartUpload {
@@ -569,7 +570,7 @@ internal class MultipartIT : S3TestBase() {
     val uploadId = initiateResult.uploadId()
 
     // upload part 1, >5MB — send per-part checksum (optional for FULL_OBJECT but validates upload)
-    val part1ExpectedChecksum = DigestUtil.checksumFor(part1File.toPath(), checksumAlgorithm)
+    val part1ExpectedChecksum = ChecksumUtil.checksumFor(part1File.toPath(), checksumAlgorithm)
     val part1Response =
       s3Client.uploadPart(
         {
@@ -585,7 +586,7 @@ internal class MultipartIT : S3TestBase() {
     assertThat(part1Response.checksum(checksumAlgorithm.toAlgorithm())).isEqualTo(part1ExpectedChecksum)
 
     // upload part 2, <5MB
-    val part2ExpectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val part2ExpectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
     val part2Response =
       s3Client.uploadPart(
         {
@@ -608,7 +609,7 @@ internal class MultipartIT : S3TestBase() {
           .use { stream -> stream.copyTo(f.outputStream()) }
       }
     concatFile.deleteOnExit()
-    val expectedFullObjectChecksum = DigestUtil.checksumFor(concatFile.toPath(), checksumAlgorithm)
+    val expectedFullObjectChecksum = ChecksumUtil.checksumFor(concatFile.toPath(), checksumAlgorithm)
 
     val completeResult =
       s3Client.completeMultipartUpload {
@@ -702,9 +703,9 @@ internal class MultipartIT : S3TestBase() {
       )
     val etag2 = partResponse2.eTag()
     val checksum2 = partResponse2.checksumCRC32()
-    val localChecksum1 = DigestUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    val localChecksum1 = ChecksumUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum1).isEqualTo(localChecksum1)
-    val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    val localChecksum2 = ChecksumUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum2).isEqualTo(localChecksum2)
 
     val completeMultipartUpload =
@@ -840,9 +841,9 @@ internal class MultipartIT : S3TestBase() {
       )
     val etag2 = partResponse2.eTag()
     val checksum2 = partResponse2.checksumCRC32()
-    val localChecksum1 = DigestUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    val localChecksum1 = ChecksumUtil.checksumFor(tempFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum1).isEqualTo(localChecksum1)
-    val localChecksum2 = DigestUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
+    val localChecksum2 = ChecksumUtil.checksumFor(uploadFile.toPath(), DefaultChecksumAlgorithm.CRC32)
     assertThat(checksum2).isEqualTo(localChecksum2)
 
     assertThatThrownBy {
@@ -879,7 +880,7 @@ internal class MultipartIT : S3TestBase() {
     testInfo: TestInfo,
   ) {
     val bucketName = givenBucket(testInfo)
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
     val initiateMultipartUploadResult =
       s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -957,7 +958,7 @@ internal class MultipartIT : S3TestBase() {
     testInfo: TestInfo,
   ) {
     val bucketName = givenBucket(testInfo)
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
     val initiateMultipartUploadResult =
       s3Client.createMultipartUpload {
         it.bucket(bucketName)
@@ -1187,7 +1188,7 @@ internal class MultipartIT : S3TestBase() {
         it.checksumType(ChecksumType.COMPOSITE)
       }
     val uploadId = initiateResult.uploadId()
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
 
     s3Client.uploadPart(
       {
@@ -1237,7 +1238,7 @@ internal class MultipartIT : S3TestBase() {
         it.checksumType(ChecksumType.COMPOSITE)
       }
     val uploadId = initiateResult.uploadId()
-    val expectedChecksum = DigestUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
+    val expectedChecksum = ChecksumUtil.checksumFor(UPLOAD_FILE_PATH, checksumAlgorithm)
 
     val partResponse =
       s3Client.uploadPart(

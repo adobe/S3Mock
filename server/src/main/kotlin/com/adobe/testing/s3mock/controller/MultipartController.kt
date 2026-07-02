@@ -22,6 +22,7 @@ import com.adobe.testing.s3mock.dto.CompleteMultipartUpload
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CopyPartResult
 import com.adobe.testing.s3mock.dto.CopySource
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
@@ -56,15 +57,14 @@ import com.adobe.testing.s3mock.util.AwsHttpParameters.PART_NUMBER_MARKER
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOADS
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID
 import com.adobe.testing.s3mock.util.AwsHttpParameters.UPLOAD_ID_MARKER
-import com.adobe.testing.s3mock.util.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromHeader
-import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumHeaderFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumTypeFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.encryptionHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.storeHeadersFrom
 import com.adobe.testing.s3mock.util.HeaderUtil.userMetadataFrom
+import com.adobe.testing.s3mock.util.resolveChecksum
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.IF_MATCH
@@ -241,14 +241,7 @@ class MultipartController(
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
     val partNum = multipartService.verifyPartNumberLimits(partNumber)
 
-    val fromSdk = checksumAlgorithmFromSdk(httpHeaders)
-    val fromHeader = checksumAlgorithmFromHeader(httpHeaders)
-    val (checksum, checksumAlgorithm) =
-      when {
-        fromSdk != null -> sdkChecksum to fromSdk
-        fromHeader != null -> checksumFrom(httpHeaders) to fromHeader
-        else -> null to null
-      }
+    val (checksum, checksumAlgorithm) = resolveChecksum(httpHeaders, sdkChecksum)
 
     if (checksum != null && checksumAlgorithm != null) {
       multipartService.verifyChecksum(tempFile, checksum, checksumAlgorithm)
@@ -465,14 +458,14 @@ class MultipartController(
           checksumFrom(httpHeaders),
           checksumTypeFrom(httpHeaders),
           checksumAlgorithmFromHeader(httpHeaders),
-        )!!
+        ) ?: throw S3Exception.NO_SUCH_UPLOAD_MULTIPART
       } else {
         CompleteMultipartUploadResult.from(
           locationWithEncodedKey,
           bucketName,
           objectName,
           normalizeEtag(requireNotNull(s3ObjectMetadata).etag),
-          multipartUploadInfo,
+          multipartUploadInfo.encryptionHeaders.orEmpty(),
           s3ObjectMetadata.checksum,
           s3ObjectMetadata.checksumType,
           s3ObjectMetadata.checksumAlgorithm,
@@ -483,7 +476,7 @@ class MultipartController(
     return ResponseEntity
       .ok()
       .headers {
-        result.multipartUploadInfo.encryptionHeaders.let(it::setAll)
+        result.encryptionHeaders.let(it::setAll)
         if (bucket.isVersioningEnabled && result.versionId != null) {
           it.set(X_AMZ_VERSION_ID, result.versionId)
         }

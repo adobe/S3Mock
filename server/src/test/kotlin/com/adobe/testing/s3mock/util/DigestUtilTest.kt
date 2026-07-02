@@ -18,8 +18,6 @@ package com.adobe.testing.s3mock.util
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
-import software.amazon.awssdk.checksums.DefaultChecksumAlgorithm
-import software.amazon.awssdk.utils.BinaryUtils
 import java.security.MessageDigest
 
 internal class DigestUtilTest {
@@ -45,31 +43,5 @@ internal class DigestUtilTest {
       )
 
     assertThat(DigestUtil.hexDigestMultipart(files)).isEqualTo(expected)
-  }
-
-  @Test
-  fun testChecksumOfMultipleFiles(testInfo: TestInfo) {
-    val sha256 = MessageDigest.getInstance("SHA-256")
-
-    // yes, this is correct - AWS calculates a Multipart digest by calculating the digest of every
-    // file involved, and then calculates the digest on the result.
-    // a hyphen with the part count is added as a suffix.
-    val expected = "${
-      BinaryUtils.toBase64(
-        sha256.digest(
-          sha256.digest("Part1".toByteArray()) + // testFile1
-            sha256.digest("Part2".toByteArray()), // testFile2
-        ),
-      )
-    }-2"
-
-    // files contain the exact content seen above
-    val files =
-      listOf(
-        TestUtil.getTestFile(testInfo, "testFile1").toPath(),
-        TestUtil.getTestFile(testInfo, "testFile2").toPath(),
-      )
-
-    assertThat(DigestUtil.checksumMultipart(files, DefaultChecksumAlgorithm.SHA256)).isEqualTo(expected)
   }
 }

@@ -18,7 +18,7 @@ package com.adobe.testing.s3mock.dto
 import com.adobe.testing.S3Verified
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
-import java.util.Date
+import java.time.Instant
 
 /**
  * Container for elements related to a particular multipart upload.
@@ -26,21 +26,21 @@ import java.util.Date
  */
 @S3Verified(year = 2025)
 data class MultipartUpload(
-  @param:JsonProperty("ChecksumAlgorithm", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumAlgorithm", namespace = S3_NS)
   val checksumAlgorithm: ChecksumAlgorithm?,
-  @param:JsonProperty("ChecksumType", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("ChecksumType", namespace = S3_NS)
   val checksumType: ChecksumType?,
-  @param:JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-  @param:JsonProperty("Initiated", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
-  val initiated: Date?,
-  @param:JsonProperty("Initiator", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonFormat(pattern = S3_DATE_FORMAT, timezone = "UTC")
+  @param:JsonProperty("Initiated", namespace = S3_NS)
+  val initiated: Instant?,
+  @param:JsonProperty("Initiator", namespace = S3_NS)
   val initiator: Initiator?,
-  @param:JsonProperty("Key", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Key", namespace = S3_NS)
   val key: String,
-  @param:JsonProperty("Owner", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Owner", namespace = S3_NS)
   val owner: Owner,
-  @param:JsonProperty("StorageClass", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("StorageClass", namespace = S3_NS)
   val storageClass: StorageClass?,
-  @param:JsonProperty("UploadId", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("UploadId", namespace = S3_NS)
   val uploadId: String?,
 )

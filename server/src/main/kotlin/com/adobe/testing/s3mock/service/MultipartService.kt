@@ -21,6 +21,7 @@ import com.adobe.testing.s3mock.dto.ChecksumType
 import com.adobe.testing.s3mock.dto.CompleteMultipartUploadResult
 import com.adobe.testing.s3mock.dto.CompletedPart
 import com.adobe.testing.s3mock.dto.CopyPartResult
+import com.adobe.testing.s3mock.dto.EtagUtil.normalizeEtag
 import com.adobe.testing.s3mock.dto.InitiateMultipartUploadResult
 import com.adobe.testing.s3mock.dto.Initiator
 import com.adobe.testing.s3mock.dto.ListMultipartUploadsResult
@@ -31,16 +32,15 @@ import com.adobe.testing.s3mock.dto.Part
 import com.adobe.testing.s3mock.dto.Prefix
 import com.adobe.testing.s3mock.dto.StorageClass
 import com.adobe.testing.s3mock.dto.Tag
+import com.adobe.testing.s3mock.model.MultipartUploadInfo
 import com.adobe.testing.s3mock.store.BucketStore
 import com.adobe.testing.s3mock.store.MultipartStore
-import com.adobe.testing.s3mock.store.MultipartUploadInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange
 import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.nio.file.Path
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
 import java.util.UUID
 
 open class MultipartService(
@@ -100,7 +100,7 @@ open class MultipartService(
           encryptionHeaders,
           versionId,
         )
-      return CopyPartResult.from(Date(), "\"$partEtag\"")
+      return CopyPartResult.from(Instant.now(), normalizeEtag(partEtag))
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
       bucketStore.removeFromBucket(destinationKey, destinationBucket)
@@ -157,9 +157,8 @@ open class MultipartService(
     uploadId: UUID,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key)
     try {
-      multipartStore.abortMultipartUpload(bucketMetadata, id!!, uploadId)
+      multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
     } finally {
       bucketStore.removeFromBucket(key, bucketName)
     }
@@ -219,7 +218,7 @@ open class MultipartService(
           (checksumType == ChecksumType.FULL_OBJECT && checksumAlgorithm == ChecksumAlgorithm.SHA256)
       if (invalid) {
         throw S3Exception.invalidChecksumTypeForAlgorithm(
-          checksumAlgorithm.toString().lowercase(Locale.getDefault()),
+          checksumAlgorithm.toString().lowercase(),
           checksumType.toString(),
         )
       }
@@ -293,31 +292,12 @@ open class MultipartService(
       }
     }
 
-    var returnDelimiter = delimiter
-    var returnKeyMarker = keyMarker
-    var returnPrefix = prefix
-    var returnCommonPrefixes = commonPrefixes
-
-    if ("url" == encodingType) {
-      contents =
-        contents.map {
-          MultipartUpload(
-            it.checksumAlgorithm,
-            it.checksumType,
-            it.initiated,
-            it.initiator,
-            urlEncodeIgnoreSlashes(it.key),
-            it.owner,
-            it.storageClass,
-            it.uploadId,
-          )
-        }
-      returnPrefix = urlEncodeIgnoreSlashes(prefix)
-      returnCommonPrefixes = commonPrefixes.map { urlEncodeIgnoreSlashes(it) }
-      returnDelimiter = urlEncodeIgnoreSlashes(delimiter)
-      returnKeyMarker = urlEncodeIgnoreSlashes(keyMarker)
-      nextKeyMarker = urlEncodeIgnoreSlashes(nextKeyMarker)
-    }
+    val returnDelimiter = encodeUrlIfRequested(delimiter, encodingType)
+    val returnKeyMarker = encodeUrlIfRequested(keyMarker, encodingType)
+    val returnPrefix = encodeUrlIfRequested(prefix, encodingType)
+    val returnCommonPrefixes = encodeUrlIfRequested(commonPrefixes, encodingType)
+    contents = encodeUrlIfRequested(contents, encodingType) { it.copy(key = urlEncodeIgnoreSlashes(it.key)) }
+    nextKeyMarker = encodeUrlIfRequested(nextKeyMarker, encodingType)
 
     return ListMultipartUploadsResult(
       bucketName,
@@ -393,8 +373,7 @@ open class MultipartService(
     verifyMultipartUploadExists(bucketName, uploadId)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
-    for (i in 0..<uploadedParts.size - 1) {
-      val part = uploadedParts[i]
+    for (part in uploadedParts.dropLast(1)) {
       verifyPartNumberLimits(part.partNumber.toString())
       if (part.size < MINIMUM_PART_SIZE) {
         LOG.error(

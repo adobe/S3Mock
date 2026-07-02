@@ -21,14 +21,15 @@ import com.adobe.testing.s3mock.util.AbstractAwsInputStream
 import com.adobe.testing.s3mock.util.AwsChunkedDecodingChecksumInputStream
 import com.adobe.testing.s3mock.util.AwsHttpHeaders.X_AMZ_DECODED_CONTENT_LENGTH
 import com.adobe.testing.s3mock.util.AwsUnsignedChunkedDecodingChecksumInputStream
-import com.adobe.testing.s3mock.util.DigestUtil.checksumFor
-import com.adobe.testing.s3mock.util.DigestUtil.verifyChecksum
+import com.adobe.testing.s3mock.util.ChecksumUtil.checksumFor
+import com.adobe.testing.s3mock.util.ChecksumUtil.verifyChecksum
 import com.adobe.testing.s3mock.util.HeaderUtil.checksumAlgorithmFromSdk
 import com.adobe.testing.s3mock.util.HeaderUtil.isChunkedEncoding
 import com.adobe.testing.s3mock.util.HeaderUtil.isV4Signed
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
+import software.amazon.awssdk.utils.http.SdkHttpUtils.urlEncodeIgnoreSlashes
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
@@ -94,30 +95,40 @@ abstract class ServiceBase {
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(ServiceBase::class.java)
 
-    fun <T> mapContents(
-      contents: List<T>,
-      transformer: (T) -> T,
-    ): List<T> = contents.map(transformer)
+    /**
+     * URL-encodes [value] using [urlEncodeIgnoreSlashes] when [encodingType] is `"url"`;
+     * returns the value unchanged otherwise (including when value is null).
+     */
+    fun encodeUrlIfRequested(
+      value: String?,
+      encodingType: String?,
+    ): String? = if (encodingType == "url") value?.let { urlEncodeIgnoreSlashes(it) } else value
 
-    fun <T> filterBy(
+    /** URL-encodes each element of [values] when [encodingType] is `"url"`; returns the list unchanged otherwise. */
+    fun encodeUrlIfRequested(
+      values: List<String>,
+      encodingType: String?,
+    ): List<String> = if (encodingType == "url") values.map { urlEncodeIgnoreSlashes(it) } else values
+
+    /**
+     * Applies [transform] to each element of [items] when [encodingType] is `"url"`;
+     * returns the list unchanged otherwise. Use when URL-encoding is applied to a field
+     * inside a domain object rather than a plain [String].
+     */
+    fun <T> encodeUrlIfRequested(
+      items: List<T>,
+      encodingType: String?,
+      transform: (T) -> T,
+    ): List<T> = if (encodingType == "url") items.map(transform) else items
+
+    fun <T, R : Comparable<R>> filterBy(
       contents: List<T>,
-      selector: (T) -> String?,
-      compareTo: String?,
+      selector: (T) -> R?,
+      compareTo: R?,
     ): List<T> =
       compareTo?.let { threshold ->
         contents.filter { selector(it)?.let { candidate -> candidate > threshold } == true }
       } ?: contents
-
-    fun <T> filterBy(
-      contents: List<T>,
-      selector: (T) -> Int,
-      compareTo: Int?,
-    ): List<T> =
-      if (compareTo != null) {
-        contents.filter { selector(it) > compareTo }
-      } else {
-        contents
-      }
 
     fun <T> filterBy(
       contents: List<T>,
@@ -148,21 +159,16 @@ abstract class ServiceBase {
       if (delimiter.isNullOrEmpty()) return emptyList()
 
       val normalizedQueryPrefix = queryPrefix.orEmpty()
-      val commonPrefixes = mutableListOf<String>()
-
-      for (c in contents) {
-        val key = function(c)
-        if (key.startsWith(normalizedQueryPrefix)) {
-          val delimiterIndex = key.indexOf(delimiter, startIndex = normalizedQueryPrefix.length)
-          if (delimiterIndex > 0) {
-            val commonPrefix = key.take(delimiterIndex + delimiter.length)
-            if (commonPrefix !in commonPrefixes) {
-              commonPrefixes += commonPrefix
-            }
+      return contents
+        .mapNotNull { c ->
+          val key = function(c)
+          if (key.startsWith(normalizedQueryPrefix)) {
+            val delimiterIndex = key.indexOf(delimiter, startIndex = normalizedQueryPrefix.length)
+            if (delimiterIndex > 0) key.take(delimiterIndex + delimiter.length) else null
+          } else {
+            null
           }
-        }
-      }
-      return commonPrefixes
+        }.distinct()
     }
   }
 }

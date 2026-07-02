@@ -26,26 +26,25 @@ import com.fasterxml.jackson.annotation.JsonValue
  * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html).
  */
 @S3Verified(year = 2025)
-@JsonRootName("LegalHold", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+@JsonRootName("LegalHold", namespace = S3_NS)
 data class LegalHold(
-  @param:JsonProperty("Status", namespace = "http://s3.amazonaws.com/doc/2006-03-01/")
+  @param:JsonProperty("Status", namespace = S3_NS)
   val status: Status?,
 ) {
   /**
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObjectLegalHold.html#API_PutObjectLegalHold_RequestSyntax).
    */
-  enum class Status(
-    @get:JsonValue private val value: String,
-  ) {
-    ON("ON"),
-    OFF("OFF"),
+  enum class Status {
+    ON,
+    OFF,
     ;
 
-    override fun toString(): String = value
+    @JsonValue
+    override fun toString(): String = name
 
     companion object {
       @JsonCreator
-      fun fromValue(value: String): Status? = entries.firstOrNull { it.value == value }
+      fun fromValue(value: String?): Status? = enumFromName<Status>(value)
     }
   }
 }
