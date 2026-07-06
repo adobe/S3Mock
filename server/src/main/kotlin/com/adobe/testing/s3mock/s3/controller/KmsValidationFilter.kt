@@ -56,7 +56,7 @@ internal class KmsValidationFilter(
       val hasKeyId = !keyId.isNullOrBlank()
 
       if (isAwsKms && hasKeyId && !keystore.validateKeyId(keyId)) {
-        LOG.info("Received invalid KMS key ID {}. Sending error response.", keyId)
+        LOG.info("Received invalid KMS key ID. Sending error response.")
 
         runCatching { request.inputStream.close() }
 
@@ -76,7 +76,7 @@ internal class KmsValidationFilter(
       }
 
       if (isAwsKms && hasKeyId) {
-        LOG.info("Received valid KMS key ID {}.", keyId)
+        LOG.info("Received valid KMS key ID.")
       }
 
       filterChain.doFilter(request, response)
