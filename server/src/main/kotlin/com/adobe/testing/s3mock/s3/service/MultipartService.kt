@@ -119,6 +119,7 @@ open class MultipartService(
     partNumberMarker: Int?,
     uploadId: UUID,
   ): ListPartsResult? {
+    verifyMaxParts(maxParts)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val id = bucketMetadata.getID(key) ?: return null
     val multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId, false)
@@ -130,7 +131,7 @@ open class MultipartService(
     var isTruncated = false
     if (parts.size > maxParts) {
       parts = parts.subList(0, maxParts)
-      nextPartNumberMarker = parts[maxParts - 1].partNumber
+      nextPartNumberMarker = parts.lastOrNull()?.partNumber
       isTruncated = true
     }
 
@@ -260,6 +261,7 @@ open class MultipartService(
     prefix: String?,
     uploadIdMarker: String?,
   ): ListMultipartUploadsResult {
+    verifyMaxUploads(maxUploads)
     var nextKeyMarker: String? = null
     var nextUploadIdMarker: String? = null
     var isTruncated = false
@@ -286,10 +288,8 @@ open class MultipartService(
     if (maxUploads < contents.size) {
       contents = contents.subList(0, maxUploads)
       isTruncated = true
-      if (maxUploads > 0) {
-        nextKeyMarker = contents[maxUploads - 1].key
-        nextUploadIdMarker = contents[maxUploads - 1].uploadId
-      }
+      nextKeyMarker = contents.lastOrNull()?.key
+      nextUploadIdMarker = contents.lastOrNull()?.uploadId
     }
 
     val returnDelimiter = encodeUrlIfRequested(delimiter, encodingType)
@@ -318,10 +318,18 @@ open class MultipartService(
   fun verifyPartNumberLimits(partNumber: String): Int {
     val number = partNumber.toInt()
     if (number !in 1..10000) {
-      LOG.error("Multipart part number invalid. partNumber={}", partNumber)
+      LOG.error("Multipart part number invalid. partNumber={}", number)
       throw S3Exception.INVALID_PART_NUMBER
     }
     return number
+  }
+
+  fun verifyMaxParts(maxParts: Int) {
+    if (maxParts < 0) throw S3Exception.INVALID_REQUEST_MAX_PARTS
+  }
+
+  fun verifyMaxUploads(maxUploads: Int) {
+    if (maxUploads < 0) throw S3Exception.INVALID_REQUEST_MAX_UPLOADS
   }
 
   @Throws(S3Exception::class)

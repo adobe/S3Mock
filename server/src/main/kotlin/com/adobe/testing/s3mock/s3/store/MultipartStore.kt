@@ -79,10 +79,7 @@ open class MultipartStore(
     val uploadId = UUID.randomUUID()
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error(
-        "Directories for storing multipart uploads couldn't be created. bucket={}, key={}, " +
-          "id={}, uploadId={}",
-        bucket,
-        key,
+        "Directories for storing multipart uploads couldn't be created. id={}, uploadId={}",
         id,
         uploadId,
       )
