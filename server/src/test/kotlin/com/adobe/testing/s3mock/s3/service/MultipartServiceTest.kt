@@ -105,7 +105,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
   }
 
   @Test
-  fun testGetMultipartUploadParts_zeroMaxPartsReturnsEmptyTruncatedPage() {
+  fun testGetMultipartUploadParts_zeroMaxPartsReturnsEmptyPage() {
     val bucketName = "bucketName"
     val key = "key"
     val uploadId = UUID.randomUUID()
@@ -129,8 +129,8 @@ internal class MultipartServiceTest : ServiceTestBase() {
 
     assertThat(result).isNotNull
     assertThat(result!!.parts).isEmpty()
-    assertThat(result.isTruncated).isTrue
-    assertThat(result.nextPartNumberMarker).isNull()
+    assertThat(result.isTruncated).isFalse
+    assertThat(result.nextPartNumberMarker).isEqualTo(0)
   }
 
   @Test

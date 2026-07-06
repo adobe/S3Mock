@@ -1339,7 +1339,7 @@ internal class MultipartIT : S3TestBase() {
           it.partNumberMarker(partListing1.nextPartNumberMarker())
         }.also {
           assertThat(it.parts()).hasSize(5)
-          // assertThat(it.nextPartNumberMarker()).isNull()
+          assertThat(it.nextPartNumberMarker()).isEqualTo(10)
           assertThat(it.isTruncated).isFalse
         }
 
@@ -1358,7 +1358,7 @@ internal class MultipartIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2026)
-  fun `list parts with max-parts zero returns an empty truncated page`(testInfo: TestInfo) {
+  fun `list parts with max-parts zero returns an empty page`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     val initiateMultipartUploadResult =
       s3Client.createMultipartUpload {
@@ -1387,8 +1387,8 @@ internal class MultipartIT : S3TestBase() {
         it.maxParts(0)
       }.also {
         assertThat(it.parts()).isEmpty()
-        assertThat(it.isTruncated).isTrue
-        assertThat(it.nextPartNumberMarker()).isNull()
+        assertThat(it.isTruncated).isFalse
+        assertThat(it.nextPartNumberMarker()).isEqualTo(0)
       }
   }
 

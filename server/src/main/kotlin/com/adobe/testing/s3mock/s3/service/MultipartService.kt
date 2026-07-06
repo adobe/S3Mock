@@ -127,13 +127,14 @@ open class MultipartService(
 
     parts = filterBy(parts, Part::partNumber, partNumberMarker)
 
-    var nextPartNumberMarker: Int? = null
     var isTruncated = false
-    if (parts.size > maxParts) {
+    if (maxParts == 0) {
+      parts = emptyList()
+    } else if (parts.size > maxParts) {
       parts = parts.subList(0, maxParts)
-      nextPartNumberMarker = parts.lastOrNull()?.partNumber
       isTruncated = true
     }
+    val nextPartNumberMarker = parts.lastOrNull()?.partNumber ?: (partNumberMarker ?: 0)
 
     return ListPartsResult(
       bucketName,
