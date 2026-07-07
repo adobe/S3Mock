@@ -1411,7 +1411,7 @@ internal class MultipartIT : S3TestBase() {
       }
     }.isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining("maxParts should be non-negative")
+      .hasMessageContaining("Argument max-parts must be an integer between 0 and 2147483647")
   }
 
   @Test
@@ -1591,6 +1591,27 @@ internal class MultipartIT : S3TestBase() {
 
   @Test
   @S3VerifiedSuccess(year = 2026)
+  fun `list MultipartUploads with max-uploads zero returns an empty page`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key("key1")
+    }
+
+    s3Client
+      .listMultipartUploads {
+        it.bucket(bucketName)
+        it.maxUploads(0)
+      }.also {
+        assertThat(it.uploads()).isEmpty()
+        assertThat(it.isTruncated).isFalse
+        assertThat(it.nextKeyMarker()).isNullOrEmpty()
+        assertThat(it.nextUploadIdMarker()).isNullOrEmpty()
+      }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
   fun `list MultipartUploads with negative max-uploads returns bad request`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
     s3Client.createMultipartUpload {
@@ -1605,7 +1626,7 @@ internal class MultipartIT : S3TestBase() {
       }
     }.isInstanceOf(AwsServiceException::class.java)
       .hasMessageContaining("Service: S3, Status Code: 400")
-      .hasMessageContaining("maxUploads should be non-negative")
+      .hasMessageContaining("Argument max-uploads must be an integer between 0 and 2147483647")
   }
 
   /**

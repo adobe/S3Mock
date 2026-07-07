@@ -286,7 +286,11 @@ open class MultipartService(
         MultipartUpload::key,
       )
     contents = filterBy(contents, MultipartUpload::key, commonPrefixes)
-    if (maxUploads < contents.size) {
+    if (maxUploads == 0) {
+      contents = emptyList()
+      nextKeyMarker = keyMarker ?: ""
+      nextUploadIdMarker = uploadIdMarker ?: ""
+    } else if (maxUploads < contents.size) {
       contents = contents.subList(0, maxUploads)
       isTruncated = true
       nextKeyMarker = contents.lastOrNull()?.key

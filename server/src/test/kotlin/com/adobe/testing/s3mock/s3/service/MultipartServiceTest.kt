@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Path
+import java.time.Instant
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -115,7 +116,7 @@ internal class MultipartServiceTest : ServiceTestBase() {
       MultipartUpload(
         null,
         null,
-        java.time.Instant.now(),
+        Instant.now(),
         Initiator.DEFAULT_INITIATOR,
         key,
         Owner.DEFAULT_OWNER,
@@ -131,6 +132,33 @@ internal class MultipartServiceTest : ServiceTestBase() {
     assertThat(result!!.parts).isEmpty()
     assertThat(result.isTruncated).isFalse
     assertThat(result.nextPartNumberMarker).isEqualTo(0)
+  }
+
+  @Test
+  fun testListMultipartUploads_zeroMaxUploadsReturnsEmptyPage() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = UUID.randomUUID()
+    val bucketMetadata = givenBucket(bucketName)
+    val multipartUpload =
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
+    whenever(multipartStore.listMultipartUploads(bucketMetadata, null)).thenReturn(listOf(multipartUpload))
+
+    val result = iut.listMultipartUploads(bucketName, null, null, null, 0, null, null)
+
+    assertThat(result.multipartUploads).isEmpty()
+    assertThat(result.isTruncated).isFalse
+    assertThat(result.nextKeyMarker).isEqualTo("")
+    assertThat(result.nextUploadIdMarker).isEqualTo("")
   }
 
   @Test
