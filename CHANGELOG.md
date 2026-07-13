@@ -196,13 +196,20 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * fix: `S3MockContainer.withVolumeAsRoot(...)` now runs the container as `root`. Because the Buildpacks image runs as the non-root `cnb` user, writes to a host-owned bind mount previously failed with HTTP 500 on Linux (e.g. in CI) — the container could not write into a directory it did not own.
   * chore: The `integration-tests` module now starts one S3Mock container per test class via Testcontainers instead of the fabric8 `docker-maven-plugin`, giving each test class full state isolation.
 * Version updates (deliverable dependencies)
-  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.46.17
-  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.6.103
+  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.49.3
+  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.8.14
+  * Bump kotlin.version from 2.3.21 to 2.4.10
 * Version updates (build dependencies)
-  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.7.0
-  * Bump actions/setup-java from 5.3.0 to 5.4.0
+  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.8.0
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.2 to 0.2.2
+  * Bump org.apache.maven.plugins:maven-jar-plugin from 3.5.0 to 3.5.1
+  * Bump actions/checkout from 7.0.0 to 7.0.1
+  * Bump actions/setup-java from 5.3.0 to 5.6.0
+  * Bump actions/stale from 10.3.0 to 10.4.0
   * Bump docker/setup-qemu-action from 4.1.0 to 4.2.0
-  * Bump github/codeql-action from 4.36.2 to 4.36.3
+  * Bump github/codeql-action from 4.36.2 to 4.37.3
+  * Bump ossf/scorecard-action from 2.4.3 to 2.4.4
+  * Bump step-security/harden-runner from 2.19.4 to 2.20.0
 
 ## 5.1.0
 
