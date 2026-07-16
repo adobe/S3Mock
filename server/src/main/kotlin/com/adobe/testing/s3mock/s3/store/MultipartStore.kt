@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.common.AwsHttpHeaders

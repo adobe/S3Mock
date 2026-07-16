@@ -46,12 +46,12 @@ skip-docker: ## Full build with Docker skipped
 # ─── Code quality ─────────────────────────────────────────────────────────────
 
 .PHONY: format
-format: ## Auto-format Kotlin with ktlint
-	./mvnw -B -V -Dstyle.color=always ktlint:format
+format: ## Auto-format Kotlin/Java/pom.xml with Spotless (ktlint + license header + pom sort)
+	./mvnw -B -V -Dstyle.color=always spotless:apply
 
 .PHONY: lint
-lint: ## Check style without auto-fixing (ktlint + Checkstyle)
-	./mvnw -B -V -Dstyle.color=always ktlint:check
+lint: ## Check style without auto-fixing (Spotless + Checkstyle)
+	./mvnw -B -V -Dstyle.color=always spotless:check
 	./mvnw -B -V -Dstyle.color=always checkstyle:check
 
 .PHONY: typecheck
@@ -90,8 +90,8 @@ run: ## Run S3Mock from source via Spring Boot
 	./mvnw spring-boot:run -pl server
 
 .PHONY: sort
-sort: ## Sort POM files with sortpom
-	./mvnw -B -V -Dstyle.color=always com.github.ekryd.sortpom:sortpom-maven-plugin:sort
+sort: ## Sort POM files with Spotless
+	./mvnw -B -V -Dstyle.color=always spotless:apply
 
 .PHONY: release
 release: ## Prepare and perform a Maven release (CI use)
