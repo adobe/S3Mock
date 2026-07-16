@@ -67,9 +67,9 @@
 
     <archunit.version>1.4.2</archunit.version>
 
-    <aws-kotlin.version>1.6.103</aws-kotlin.version>
+    <aws-kotlin.version>1.8.14</aws-kotlin.version>
 
-    <aws-v2.version>2.46.17</aws-v2.version>
+    <aws-v2.version>2.49.3</aws-v2.version>
 
     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
@@ -78,6 +78,9 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
     <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
+
+    <httpclient5.version>5.6.2</httpclient5.version>
+    <httpcore5.version>5.4.3</httpcore5.version>
 
     <java.target.version>17</java.target.version>
     <java.version>25</java.version>
@@ -185,6 +188,24 @@
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
         <version>${jetbrains-annotations.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpclient5.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpcore5.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpcore5.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mockito.kotlin</groupId>
