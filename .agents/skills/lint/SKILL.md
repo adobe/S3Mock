@@ -7,49 +7,26 @@ description: Fix code style issues and ensure linting CI gates pass in S3Mock. U
 
 ## Entry Criteria
 
-Use this skill when:
-- ktlint or Checkstyle violations are reported
-- Asked to fix formatting issues
-- Invoked as a final step by the `implement`, `test`, or `refactor` skill
+Use when ktlint/Checkstyle violations are reported, when asked to fix formatting, or when invoked as a final step by the `implement`, `test`, or `refactor` skill.
 
 ## Tools
 
-| Tool | Target | Config | Auto-fix? |
+| Tool | Target | Config | Auto-fix |
 |---|---|---|---|
-| **ktlint** | Kotlin source files | `.editorconfig` | Yes — `make format` |
-| **Checkstyle** | Java source + XML files | `etc/checkstyle.xml` | No — fix manually |
+| ktlint | Kotlin source files | `.editorconfig` | Yes — `make format` |
+| Checkstyle | Java source + XML files | `etc/checkstyle.xml` | No — fix manually per `docs/JAVA.md` |
 
 ## Execution Steps
 
-1. **`make format`** — auto-formats all Kotlin files with ktlint. Fixes the vast majority of Kotlin style issues.
-2. **`make lint`** — reports ktlint and Checkstyle violations. Fix Checkstyle (Java/XML) violations manually.
-3. **`make sort`** — run this if any `pom.xml` was added or modified during this task.
-4. Fix any remaining violations manually (see resources below for style guides).
-5. **`make install`** — confirm all linting CI gates pass before finishing.
-
-## Common Violations
-
-### ktlint (Kotlin)
-
-`make format` auto-fixes most of these:
-- Wrong indentation (2 spaces)
-- Unused or wildcard imports
-- Missing trailing newline
-- Line too long (max 120 characters)
-
-To check without modifying files: `make lint`
-
-### Checkstyle (Java / XML)
-
-Fix these manually:
-- Wrong indentation (2 spaces, per `.editorconfig`)
-- Line too long (max 120 characters)
-- Import ordering
-- Missing or malformed Javadoc
+1. `make format` — auto-fixes Kotlin style issues.
+2. `make lint` — reports remaining ktlint and Checkstyle violations.
+3. `make sort` — run if any `pom.xml` was added or modified during this task.
+4. Fix remaining Checkstyle (Java/XML) violations manually, per `docs/JAVA.md` and `docs/KOTLIN.md`.
+5. `make install` — confirm all linting CI gates pass before finishing.
 
 ## Completion Criteria
 
-- [ ] `make format` run (Kotlin auto-fixed)
+- [ ] `make format` run
 - [ ] `make lint` passes with no violations
 - [ ] `make sort` run if any `pom.xml` was modified
 - [ ] `make install` passes all CI gates
@@ -57,7 +34,5 @@ Fix these manually:
 ## Resources
 
 - [`AGENTS.md`](../../../AGENTS.md) — build command reference
-- [`docs/KOTLIN.md`](../../../docs/KOTLIN.md) — Kotlin style conventions
-- [`docs/JAVA.md`](../../../docs/JAVA.md) — Java style conventions
-- [`etc/checkstyle.xml`](../../../etc/checkstyle.xml) — Checkstyle configuration
-- [`.editorconfig`](../../../.editorconfig) — indentation and line-length settings
+- [`docs/KOTLIN.md`](../../../docs/KOTLIN.md), [`docs/JAVA.md`](../../../docs/JAVA.md) — style conventions
+- [`etc/checkstyle.xml`](../../../etc/checkstyle.xml), [`.editorconfig`](../../../.editorconfig)

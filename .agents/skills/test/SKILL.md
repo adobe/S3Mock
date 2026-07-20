@@ -7,73 +7,32 @@ description: Write, update, and fix tests in S3Mock. Use when asked to add test 
 
 ## Entry Criteria
 
-Use this skill when asked to:
-- Add or update unit tests (`*Test.kt`) in `server/`
-- Add or update integration tests (`*IT.kt`) in `integration-tests/`
-- Fix failing tests
-- Verify test correctness or coverage
+Use to add/update unit tests (`*Test.kt`) or integration tests (`*IT.kt`), fix failing tests, or verify test coverage.
 
 ## Before Starting
 
-1. Read `AGENTS.md` (root) and the relevant module `AGENTS.md`.
-2. Read `docs/TESTING.md` for the full testing strategy, base classes, and patterns.
-3. If existing tests have structural problems (poor naming, shared state, weak assertions), invoke the **`refactor` skill** to fix them before adding new tests.
-
-## Base Class Selection
-
-For Spring-managed components (services, stores, controllers, filters, `@ControllerAdvice`), always extend the correct base class — never write standard Mockito unit tests (`@ExtendWith(MockitoExtension)` + `@Mock` + `@InjectMocks`), which is banned by the `noStandardMockitoUnitTests` ArchUnit rule:
-
-| Test type | Base class | Module |
-|---|---|---|
-| Service unit tests | `ServiceTestBase` | `server/` |
-| Store unit tests | `StoreTestBase` | `server/` |
-| Controller slice tests (`@WebMvcTest`) | `BaseControllerTest` | `server/` |
-| Integration tests (live Docker container) | `S3TestBase` | `integration-tests/` |
-
-Plain classes with no injected collaborators (most `dto`/`model`/`util`) use a plain unit test with no base class.
-
-## Conventions
-
-- **Naming**: backtick function names — `` fun `should create bucket when name is valid`() ``
-- **Structure**: Arrange → Act → Assert
-- **Independence**: each test creates its own resources; no shared state between tests
-- **Assertions**: AssertJ — `assertThat(result).isEqualTo(expected)`, not bare `isNotNull()`
-- **Error cases**: `assertThatThrownBy { ... }.isInstanceOf(AwsServiceException::class.java)`
-- **Visibility**: `internal class`
-- **Unit under test**: name it `iut`, injected with `@Autowired`
-
-## Integration Test Conventions
-
-- Accept `testInfo: TestInfo` as a method parameter for unique resource naming
-- Use `givenBucket(testInfo)` for bucket creation — do not write your own helper
-- Use actual AWS SDK v2 clients against S3Mock — do not mock SDK clients (see `INVARIANTS.md`)
+1. Read root `AGENTS.md`, the relevant module `AGENTS.md`, and **[docs/TESTING.md](../../../docs/TESTING.md)** for base classes, conventions, and running commands.
+2. If existing tests have structural problems (poor naming, shared state, weak assertions), invoke the **`refactor` skill** first.
 
 ## Execution Steps
 
-1. Select the correct base class for the test type.
-2. Write tests following the naming and structure conventions above.
-3. Cover both success paths and failure/error paths.
-4. Keep tests independent — use `testInfo`-based or UUID-based resource names.
-5. Update the copyright year in every file you modify — see `INVARIANTS.md`.
-6. Invoke the **`lint` skill** to fix formatting and verify style gates pass.
-7. Verify all tests pass locally: `make test` (unit) or `make integration-tests` (integration).
+1. Select the base class per `docs/TESTING.md` § Unit Tests, or `S3TestBase` per **[integration-tests/AGENTS.md](../../../integration-tests/AGENTS.md)** for integration tests.
+2. Write tests following `docs/TESTING.md` conventions (naming, structure, assertions, independence).
+3. Cover both success and failure/error paths.
+4. Update the copyright year in every modified file (`INVARIANTS.md`).
+5. Invoke the **`lint` skill**.
+6. Run `make test` (unit) or `make integration-tests` (integration) to verify locally.
 
 ## Completion Criteria
 
-- [ ] All new/changed code paths covered by tests
-- [ ] Both success and failure cases tested
+- [ ] All new/changed code paths covered, including failure cases
+- [ ] Correct base class and conventions used (per `docs/TESTING.md`)
 - [ ] Tests pass locally
-- [ ] Correct base class used
-- [ ] Spring-managed components use `@SpringBootTest`/`@WebMvcTest` + `@MockitoBean` — no `@ExtendWith(MockitoExtension)`, `@Mock`, or `@InjectMocks` (enforced by `noStandardMockitoUnitTests`)
-- [ ] Backtick naming, `internal class`, AssertJ assertions used
-- [ ] No shared state between tests
 - [ ] Copyright year updated in every modified file
 - [ ] Lint gates pass (via `lint` skill)
 
 ## Resources
 
-- [`AGENTS.md`](../../../AGENTS.md) — DO/DON'T, build commands
-- [`INVARIANTS.md`](../../../INVARIANTS.md) — hard constraints (copyright, SDK version, test framework restrictions)
+- [`AGENTS.md`](../../../AGENTS.md), [`INVARIANTS.md`](../../../INVARIANTS.md)
 - Relevant module `AGENTS.md` (`server/AGENTS.md` or `integration-tests/AGENTS.md`)
-- [`docs/TESTING.md`](../../../docs/TESTING.md) — full testing strategy, base classes, patterns, running commands
-- [`docs/KOTLIN.md`](../../../docs/KOTLIN.md) — naming conventions, `internal class`, backtick names
+- [`docs/TESTING.md`](../../../docs/TESTING.md), [`docs/KOTLIN.md`](../../../docs/KOTLIN.md)

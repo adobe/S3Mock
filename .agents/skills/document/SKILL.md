@@ -7,81 +7,33 @@ description: Generate and update S3Mock project documentation. Use when asked to
 
 ## Entry Criteria
 
-Use this skill when asked to:
-- Update `CHANGELOG.md` for a new feature or bug fix
-- Update `README.md` (operations table, configuration, usage examples)
-- Update `AGENTS.md` (root or module) for architectural or convention changes
-- Update files in `docs/` (`KOTLIN.md`, `SPRING.md`, `TESTING.md`, `JAVA.md`)
-- Fix formatting, wording, or style in any documentation file
-
-## Documentation Files
-
-| File | Audience | Purpose |
-|---|---|---|
-| `README.md` | End users | Usage, configuration, S3 operations table |
-| `CHANGELOG.md` | End users | Version history, breaking changes |
-| `docs/TESTING.md` | Contributors / agents | Testing strategy, base classes, patterns |
-| `docs/KOTLIN.md` | Contributors / agents | Kotlin idioms, naming, anti-patterns, KDoc |
-| `docs/SPRING.md` | Contributors / agents | Spring Boot patterns, DI, exception handling |
-| `docs/JAVA.md` | Contributors / agents | Java idioms, naming, Javadoc |
-| `AGENTS.md` (root + modules) | Agents | Architecture, conventions, guardrails |
-| `.github/CONTRIBUTING.md` | Contributors | Dev setup, CLA, code reviews |
-
-## Per-Scenario Updates
-
-**New S3 operation**: Update the operations table in `README.md` (`:x:` → `:white_check_mark:`), add entry to `CHANGELOG.md`, update `server/AGENTS.md` if new patterns were introduced.
-
-**New API surface / new port**: Add a dedicated section in `README.md` covering: how to enable (Spring profile), ports (HTTP/HTTPS), configuration variables, and a supported-operations table. Also add to the Docker examples, Configuration table, and Spring Profiles table. Add entry to `CHANGELOG.md`. Update `server/AGENTS.md` if new architectural patterns were introduced.
-
-**Configuration change**: Update configuration table in `README.md`, update the Configuration section in `AGENTS.md`, add entry to `CHANGELOG.md`.
-
-**Architecture change**: Update the relevant module's `AGENTS.md`, update root `AGENTS.md` if cross-cutting, add entry to `CHANGELOG.md`.
-
-**Spring Boot pattern change**: Update `docs/SPRING.md` and `server/AGENTS.md` if it affects how controllers, services, or stores are structured.
-
-**Kotlin/Java style change**: Update `docs/KOTLIN.md` or `docs/JAVA.md`; update root `AGENTS.md` DO/DON'T if a new guardrail is introduced.
-
-## CHANGELOG Format
-
-Group changes under the current version heading. If the heading doesn't exist yet, add it under `# CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT`. Follow the existing bullet structure:
-
-```
-* Features and fixes
-* Refactorings
-* Version updates (deliverable dependencies)
-* Version updates (build dependencies)
-```
-
-Use clear, user-facing language. Note breaking changes explicitly. Reference GitHub issues/PRs where relevant.
-
-## Style
-
-- Concise, active voice
-- Include runnable examples (Kotlin for API, shell for CLI)
-- Link to [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) where applicable
-- Match surrounding formatting exactly
+Use when asked to update `CHANGELOG.md`, `README.md`, `AGENTS.md` (root or module), or `docs/*.md`, or to fix formatting/wording in any documentation file.
 
 ## Execution Steps
 
-1. Read `AGENTS.md` (root + relevant module).
-2. Determine what changed and which files need updating (use the per-scenario table above).
-3. Update files following the style and format rules above.
-4. Verify technical accuracy against source code.
-5. Verify all links and code examples are valid and runnable.
+1. Read root `AGENTS.md` and the relevant module `AGENTS.md`.
+2. Determine which file(s) to update by scenario:
+
+   | Scenario | Update |
+   |---|---|
+   | New S3 operation | `README.md` operations table, `CHANGELOG.md`, `server/AGENTS.md` if new patterns were introduced |
+   | New API surface / port | `README.md` (enablement, ports, config, ops table, Docker examples), `CHANGELOG.md`, `server/AGENTS.md` |
+   | Configuration change | `README.md` configuration table, root `AGENTS.md` Configuration section, `CHANGELOG.md` |
+   | Architecture change | Relevant module `AGENTS.md`, root `AGENTS.md` if cross-cutting, `CHANGELOG.md` |
+   | Spring Boot pattern change | `docs/SPRING.md`, `server/AGENTS.md` |
+   | Kotlin/Java style change | `docs/KOTLIN.md` / `docs/JAVA.md`, root `AGENTS.md` DO/DON'T if a new guardrail is introduced |
+3. For `CHANGELOG.md`: add under the current version heading (create it under `# CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT` if missing), matching the existing `Features and fixes` / `Refactorings` / `Version updates` bullet structure. Use clear, user-facing language; note breaking changes explicitly; reference GitHub issues/PRs where relevant.
+4. Match surrounding style exactly (concise, active voice, runnable examples, links to [AWS S3 API docs](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) where relevant).
+5. Verify technical accuracy against source code, and that all links and code examples are valid and runnable.
 
 ## Completion Criteria
 
-- [ ] All appropriate files updated for the type of change
-- [ ] `CHANGELOG.md` updated if the change is user-facing
-- [ ] `README.md` operations or configuration table updated if applicable
-- [ ] `AGENTS.md` updated if architecture or conventions changed
+- [ ] All files for the scenario updated (see table above)
 - [ ] Technical accuracy verified against source code
 - [ ] Links and code examples are valid
 - [ ] Matches surrounding style and formatting
 
 ## Resources
 
-- [`AGENTS.md`](../../../AGENTS.md) — authoritative source for architecture and conventions
-- Relevant module `AGENTS.md`
-- [`CHANGELOG.md`](../../../CHANGELOG.md) — existing entries to match format
-- [`README.md`](../../../README.md) — operations table and configuration table to update
+- [`AGENTS.md`](../../../AGENTS.md) and relevant module `AGENTS.md`
+- [`CHANGELOG.md`](../../../CHANGELOG.md), [`README.md`](../../../README.md) — existing entries/tables to match
