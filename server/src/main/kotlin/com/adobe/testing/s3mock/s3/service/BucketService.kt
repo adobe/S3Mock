@@ -193,6 +193,9 @@ open class BucketService(
       .sortedBy(S3Object::key)
   }
 
+  // listObjectsV1 is deprecated by AWS but must be supported for as long as AWS supports it;
+  // suppress the resulting call-site warning rather than removing the (still required) code.
+  @Suppress("DEPRECATION")
   fun listVersions(
     bucketName: String,
     prefix: String?,

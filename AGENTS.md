@@ -42,6 +42,8 @@ Two independent bounded contexts under `com.adobe.testing.s3mock`, plus a thin s
 - Use **AWS SDK v2** for all new integration tests
 - Use **JUnit 5** for all new tests
 - Validate XML serialization against [AWS S3 API documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html)
+- Keep DTO enum constants and fields that mirror the full AWS S3 API surface even if unused by current code — "unused" lint warnings on these are expected, not dead code
+- Keep supporting deprecated-but-still-live AWS APIs (e.g. `listObjectsV1`) for as long as AWS supports them; suppress the resulting warning with `@Suppress("DEPRECATION")` at the call site instead of removing the code
 
 ### DON'T
 
