@@ -810,6 +810,32 @@ internal class MultipartControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testListMultipartUploads_BadRequest_negativeMaxUploads() {
+    val bucketMeta = bucketMetadata()
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val maxUploads = -1
+    doThrow(S3Exception.INVALID_REQUEST_MAX_UPLOADS)
+      .whenever(multipartService)
+      .verifyMaxUploads(maxUploads)
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}")
+        .queryParam("uploads", "")
+        .queryParam("max-uploads", maxUploads)
+        .build()
+        .toString()
+
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_UPLOADS))))
+  }
+
+  @Test
   fun testListMultipartUploads_NoSuchBucket() {
     // Simulate bucket missing
     doThrow(S3Exception.NO_SUCH_BUCKET)
@@ -1058,6 +1084,33 @@ internal class MultipartControllerTest : BaseControllerTest() {
           .accept(MediaType.APPLICATION_XML),
       ).andExpect(status().isOk)
       .andExpect(content().string(MAPPER.writeValueAsString(result)))
+  }
+
+  @Test
+  fun testListParts_BadRequest_negativeMaxParts() {
+    val bucketMeta = bucketMetadata()
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(bucketMeta)
+
+    val uploadId = UUID.randomUUID()
+    val maxParts = -1
+    doThrow(S3Exception.INVALID_REQUEST_MAX_PARTS)
+      .whenever(multipartService)
+      .verifyMaxParts(maxParts)
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/${TEST_BUCKET_NAME}/my/key.txt")
+        .queryParam("uploadId", uploadId)
+        .queryParam("max-parts", maxParts)
+        .build()
+        .toString()
+
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML),
+      ).andExpect(status().isBadRequest)
+      .andExpect(content().string(MAPPER.writeValueAsString(from(S3Exception.INVALID_REQUEST_MAX_PARTS))))
   }
 
   @Test

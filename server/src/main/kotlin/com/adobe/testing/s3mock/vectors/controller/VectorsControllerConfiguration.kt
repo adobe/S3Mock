@@ -34,7 +34,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.http.converter.HttpMessageConverter
+import org.springframework.http.converter.HttpMessageConverters
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -50,13 +50,11 @@ import tools.jackson.module.kotlin.KotlinModule
 @Order(LOWEST_PRECEDENCE)
 class VectorsControllerConfiguration : WebMvcConfigurer {
   /**
-   * Registers a [JacksonJsonHttpMessageConverter] backed by an explicit Kotlin-aware
-   * [JsonMapper]. Spring Boot picks up `HttpMessageConverter` beans registered this way.
-   * This converter is placed at position 0 (highest priority) via [extendMessageConverters],
+   * A [JacksonJsonHttpMessageConverter] backed by an explicit Kotlin-aware [JsonMapper].
+   * Registered via [configureMessageConverters] to override the default JSON converter,
    * ensuring S3 Vectors request/response bodies are serialized as JSON using the Kotlin module.
    */
-  @Bean
-  fun vectorsJsonHttpMessageConverter(): JacksonJsonHttpMessageConverter =
+  private fun vectorsJsonHttpMessageConverter(): JacksonJsonHttpMessageConverter =
     JacksonJsonHttpMessageConverter(
       JsonMapper
         .builder()
@@ -81,8 +79,8 @@ class VectorsControllerConfiguration : WebMvcConfigurer {
     )
   }
 
-  override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
-    converters.add(0, vectorsJsonHttpMessageConverter())
+  override fun configureMessageConverters(builder: HttpMessageConverters.ServerBuilder) {
+    builder.withJsonConverter(vectorsJsonHttpMessageConverter())
   }
 
   @Bean

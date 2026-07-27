@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.common.AwsHttpHeaders
@@ -79,10 +78,7 @@ open class MultipartStore(
     val uploadId = UUID.randomUUID()
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error(
-        "Directories for storing multipart uploads couldn't be created. bucket={}, key={}, " +
-          "id={}, uploadId={}",
-        bucket,
-        key,
+        "Directories for storing multipart uploads couldn't be created. id={}, uploadId={}",
         id,
         uploadId,
       )

@@ -197,6 +197,18 @@ class S3Exception(
         INVALID_REQUEST_CODE,
         "maxKeys should be non-negative",
       )
+    val INVALID_REQUEST_MAX_PARTS: S3Exception =
+      S3Exception(
+        HttpStatus.BAD_REQUEST.value(),
+        "InvalidArgument",
+        "Argument max-parts must be an integer between 0 and 2147483647",
+      )
+    val INVALID_REQUEST_MAX_UPLOADS: S3Exception =
+      S3Exception(
+        HttpStatus.BAD_REQUEST.value(),
+        "InvalidArgument",
+        "Argument max-uploads must be an integer between 0 and 2147483647",
+      )
     val INVALID_REQUEST_MAX_BUCKETS: S3Exception =
       S3Exception(
         HttpStatus.BAD_REQUEST.value(),

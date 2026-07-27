@@ -185,21 +185,32 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * fix: removed a log statement that echoed the raw, attacker-controlled `Content-MD5` request header, which could be used to forge log entries.
   * fix: `GetObject` with a `Range` header no longer risks a `500 Internal Server Error` on large objects — range positioning now guarantees an exact skip to the requested start offset instead of relying on `InputStream.skip`, which is permitted to skip fewer bytes than requested.
   * fix: dropped the unused `software.amazon.awssdk:s3` client SDK dependency from the server module (only its `checksums`, `regions`, and `utils` helper classes were ever used) — shrinks the Docker image by removing ~15 transitive jars (Netty/Apache HTTP clients, protocol/model classes) that were never exercised at runtime.
+  * fix: Reject negative `max-parts` and `max-uploads` multipart listing parameters instead of failing with server errors.
+  * fix: `ListParts` now correctly returns `IsTruncated=false` and a `NextPartNumberMarker` equal to the last returned part's number (or `0`/the request's `part-number-marker` when no parts are returned, e.g. `max-parts=0`) instead of `null`/incorrectly reporting the page as truncated, matching real S3.
+  * fix: `ListMultipartUploads` with `max-uploads=0` now returns an empty, non-truncated page (`IsTruncated=false` and empty `NextKeyMarker`/`NextUploadIdMarker`) instead of incorrectly reporting the page as truncated, matching real S3.
   * chore: replaced the runtime `software.amazon.awssdk:aws-crt-client` dependency with a pure-JVM `Crc64Nvme` checksum implementation. The native `aws-crt` library was only pulled in to compute the `CRC64NVME` checksum and bundled ~20MB of per-platform native binaries (MQTT, S3, TLS, HTTP) that were otherwise unused — shrinking the executable fat jar from ~54MB to ~34MB (−37%) and removing native-library loading at startup. `aws-crt` is now a test-only dependency (the AWS SDK chunk-encoder used to build test fixtures still requires it).
   * chore: dropped the `software.amazon.awssdk:regions` dependency from the server module. It was only used to type the `com.adobe.testing.s3mock.store.region` config property (default `us-east-1`), but transitively bundled the entire `sdk-core` chain (`sdk-core`, `third-party-jackson-core`, `retries`, `profiles`, `json-utils`, and several SPIs). The property is now a plain `String`, shrinking the executable fat jar by a further ~3MB (~34MB to ~31MB). No user-facing change — the region is still configured the same way.
   * chore: Modernized the Docker image build. 
     * The hand-written multi-stage `Dockerfile` and `docker buildx` shell scripts (and the entire `docker` module) were replaced by the Spring Boot Maven plugin's `build-image` goal.
     * The build is using the BellSoft Alpaquita Linux (musl) Cloud Native Buildpacks builder (`bellsoft/buildpacks.builder:musl`) instead of the default Paketo `noble-java-tiny` builder, and the jlink JRE is trimmed further (`--vm=server` drops the unused client/minimal JVMs, `--compress=zip-9` shrinks the module layer).
     * fix: `S3MockContainer.withVolumeAsRoot(...)` now runs the container as `root`. Because the Buildpacks image runs as the non-root `cnb` user, writes to a host-owned bind mount previously failed with HTTP 500 on Linux (e.g. in CI) — the container could not write into a directory it did not own.
+    * fix: switched the image's GC from ZGC to Serial GC. ZGC's concurrent-collection overhead was too costly at the container's tuned low-memory footprint, causing `-XX:+ExitOnOutOfMemoryError`-triggered JVM exits under concurrent load (surfacing to clients as `Connection reset`) — Serial GC's fully-compacting collections reclaim memory more reliably at this heap size.
   * chore: The `integration-tests` module now starts one S3Mock container per test class via Testcontainers instead of the fabric8 `docker-maven-plugin`, giving each test class full state isolation.
 * Version updates (deliverable dependencies)
-  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.46.17
-  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.6.103
+  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.49.3
+  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.8.14
+  * Bump kotlin.version from 2.3.21 to 2.4.10
 * Version updates (build dependencies)
-  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.7.0
-  * Bump actions/setup-java from 5.3.0 to 5.4.0
+  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.8.0
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.2 to 0.2.2
+  * Bump org.apache.maven.plugins:maven-jar-plugin from 3.5.0 to 3.5.1
+  * Bump actions/checkout from 7.0.0 to 7.0.1
+  * Bump actions/setup-java from 5.3.0 to 5.6.0
+  * Bump actions/stale from 10.3.0 to 10.4.0
   * Bump docker/setup-qemu-action from 4.1.0 to 4.2.0
-  * Bump github/codeql-action from 4.36.2 to 4.36.3
+  * Bump github/codeql-action from 4.36.2 to 4.37.3
+  * Bump ossf/scorecard-action from 2.4.3 to 2.4.4
+  * Bump step-security/harden-runner from 2.19.4 to 2.20.0
 
 ## 5.1.0
 

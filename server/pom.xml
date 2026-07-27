@@ -162,10 +162,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.github.gantsign.maven</groupId>
-        <artifactId>ktlint-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
       <plugin>
@@ -201,8 +197,8 @@
                 Tighten the jlink output beyond the buildpack default: keep only the server VM
                 (drops the unused client + minimal libjvm.so variants, ~15MB), and use the JDK 21+
                 zip-9 module compression (shrinks lib/modules by ~10MB). musl only trims the OS
-                layer, not the JRE, so these flags are what actually reduce the JRE layer. ZGC and
-                C2 live in the server VM, so runtime behaviour is unchanged.
+                layer, not the JRE, so these flags are what actually reduce the JRE layer. All GCs
+                (including Serial GC) and C2 live in the server VM, so runtime behaviour is unchanged.
               -->
               <BP_JVM_JLINK_ARGS>--no-man-pages --no-header-files --strip-debug --compress=zip-9 --vm=server</BP_JVM_JLINK_ARGS>
               <!-- S3Mock does not use Spring Cloud Bindings; disable to remove the ~94MB layer. -->
@@ -220,8 +216,12 @@
               <!--
                 Footprint tuning: a smaller reserved code cache (vs the 240M default) and a 512k thread stack.
                 The memory calculator honors these user-provided values instead of overriding them.
+                Serial GC (not ZGC) because at this heap size (~108M under the 256Mi container cap)
+                ZGC's concurrent-collection bookkeeping and worker threads cost more than they save;
+                Serial's single-threaded, fully-compacting collections reclaim memory more reliably
+                under the concurrent load in ConcurrencyIT, and S3Mock has no pause-time SLA to justify ZGC.
               -->
-              <BPE_APPEND_JAVA_TOOL_OPTIONS>-XX:+UseZGC -Djava.security.egd=file:/dev/./urandom -XX:ReservedCodeCacheSize=32M -Xss512k</BPE_APPEND_JAVA_TOOL_OPTIONS>
+              <BPE_APPEND_JAVA_TOOL_OPTIONS>-XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -XX:ReservedCodeCacheSize=32M -Xss512k</BPE_APPEND_JAVA_TOOL_OPTIONS>
               <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
               <BPE_DEFAULT_LANG>en_US.UTF-8</BPE_DEFAULT_LANG>
               <BPE_DEFAULT_LANGUAGE>en_US:en</BPE_DEFAULT_LANGUAGE>

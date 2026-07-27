@@ -436,6 +436,7 @@ class BucketController(
   )
   @S3Verified(year = 2025)
   @Deprecated("Long since replaced by listObjectsV2")
+  @Suppress("DEPRECATION")
   fun listObjects(
     @PathVariable bucketName: String,
     @RequestParam(required = false) delimiter: String?,

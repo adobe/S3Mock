@@ -13,15 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.service
 
 import com.adobe.testing.s3mock.s3.S3Exception
 import com.adobe.testing.s3mock.s3.dto.CompletedPart
+import com.adobe.testing.s3mock.s3.dto.Initiator
+import com.adobe.testing.s3mock.s3.dto.MultipartUpload
+import com.adobe.testing.s3mock.s3.dto.Owner
 import com.adobe.testing.s3mock.s3.dto.Part
+import com.adobe.testing.s3mock.s3.dto.StorageClass
 import com.adobe.testing.s3mock.s3.model.BucketMetadata
 import com.adobe.testing.s3mock.s3.store.MultipartStore
 import com.adobe.testing.s3mock.s3.store.ObjectStore
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -31,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.nio.file.Path
+import java.time.Instant
 import java.util.UUID
 
 @SpringBootTest(classes = [ServiceConfiguration::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -73,6 +78,86 @@ internal class MultipartServiceTest : ServiceTestBase() {
     val partNumber = "-1"
     assertThatThrownBy { iut.verifyPartNumberLimits(partNumber) }
       .isEqualTo(S3Exception.INVALID_PART_NUMBER)
+  }
+
+  @Test
+  fun testVerifyMaxParts_success() {
+    iut.verifyMaxParts(0)
+    iut.verifyMaxParts(10)
+  }
+
+  @Test
+  fun testVerifyMaxParts_failure() {
+    assertThatThrownBy { iut.verifyMaxParts(-1) }
+      .isEqualTo(S3Exception.INVALID_REQUEST_MAX_PARTS)
+  }
+
+  @Test
+  fun testVerifyMaxUploads_success() {
+    iut.verifyMaxUploads(0)
+    iut.verifyMaxUploads(10)
+  }
+
+  @Test
+  fun testVerifyMaxUploads_failure() {
+    assertThatThrownBy { iut.verifyMaxUploads(-1) }
+      .isEqualTo(S3Exception.INVALID_REQUEST_MAX_UPLOADS)
+  }
+
+  @Test
+  fun testGetMultipartUploadParts_zeroMaxPartsReturnsEmptyPage() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = UUID.randomUUID()
+    val bucketMetadata = givenBucket(bucketName)
+    val id = bucketMetadata.addKey(key)
+    val multipartUpload =
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
+    whenever(multipartStore.getMultipartUpload(bucketMetadata, uploadId, false)).thenReturn(multipartUpload)
+    whenever(multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)).thenReturn(givenParts(2, 1L))
+
+    val result = iut.getMultipartUploadParts(bucketName, key, 0, null, uploadId)
+
+    assertThat(result).isNotNull
+    assertThat(result!!.parts).isEmpty()
+    assertThat(result.isTruncated).isFalse
+    assertThat(result.nextPartNumberMarker).isEqualTo(0)
+  }
+
+  @Test
+  fun testListMultipartUploads_zeroMaxUploadsReturnsEmptyPage() {
+    val bucketName = "bucketName"
+    val key = "key"
+    val uploadId = UUID.randomUUID()
+    val bucketMetadata = givenBucket(bucketName)
+    val multipartUpload =
+      MultipartUpload(
+        null,
+        null,
+        Instant.now(),
+        Initiator.DEFAULT_INITIATOR,
+        key,
+        Owner.DEFAULT_OWNER,
+        StorageClass.STANDARD,
+        uploadId.toString(),
+      )
+    whenever(multipartStore.listMultipartUploads(bucketMetadata, null)).thenReturn(listOf(multipartUpload))
+
+    val result = iut.listMultipartUploads(bucketName, null, null, null, 0, null, null)
+
+    assertThat(result.multipartUploads).isEmpty()
+    assertThat(result.isTruncated).isFalse
+    assertThat(result.nextKeyMarker).isEqualTo("")
+    assertThat(result.nextUploadIdMarker).isEqualTo("")
   }
 
   @Test

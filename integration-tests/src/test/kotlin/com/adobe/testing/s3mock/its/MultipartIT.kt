@@ -1339,7 +1339,7 @@ internal class MultipartIT : S3TestBase() {
           it.partNumberMarker(partListing1.nextPartNumberMarker())
         }.also {
           assertThat(it.parts()).hasSize(5)
-          // assertThat(it.nextPartNumberMarker()).isNull()
+          assertThat(it.nextPartNumberMarker()).isEqualTo(10)
           assertThat(it.isTruncated).isFalse
         }
 
@@ -1354,6 +1354,64 @@ internal class MultipartIT : S3TestBase() {
       assertThat(it.partNumber()).isEqualTo(6)
       assertThat(it.lastModified()).isExactlyInstanceOf(Instant::class.java)
     }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `list parts with max-parts zero returns an empty page`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val initiateMultipartUploadResult =
+      s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+    val uploadId = initiateMultipartUploadResult.uploadId()
+    val key = initiateMultipartUploadResult.key()
+
+    s3Client.uploadPart(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+        it.uploadId(uploadId)
+        it.partNumber(1)
+        it.contentLength(UPLOAD_FILE_LENGTH)
+      },
+      RequestBody.fromFile(UPLOAD_FILE),
+    )
+
+    s3Client
+      .listParts {
+        it.bucket(bucketName)
+        it.key(key)
+        it.uploadId(uploadId)
+        it.maxParts(0)
+      }.also {
+        assertThat(it.parts()).isEmpty()
+        assertThat(it.isTruncated).isFalse
+        assertThat(it.nextPartNumberMarker()).isEqualTo(0)
+      }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `list parts with negative max-parts returns bad request`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val initiateMultipartUploadResult =
+      s3Client.createMultipartUpload {
+        it.bucket(bucketName)
+        it.key(UPLOAD_FILE_NAME)
+      }
+
+    assertThatThrownBy {
+      s3Client.listParts {
+        it.bucket(bucketName)
+        it.key(initiateMultipartUploadResult.key())
+        it.uploadId(initiateMultipartUploadResult.uploadId())
+        it.maxParts(-1)
+      }
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("Argument max-parts must be an integer between 0 and 2147483647")
   }
 
   @Test
@@ -1529,6 +1587,46 @@ internal class MultipartIT : S3TestBase() {
         assertThat(it.uploads()).hasSize(5)
         assertThat(it.uploads()[0].key()).isEqualTo("key5")
       }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `list MultipartUploads with max-uploads zero returns an empty page`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key("key1")
+    }
+
+    s3Client
+      .listMultipartUploads {
+        it.bucket(bucketName)
+        it.maxUploads(0)
+      }.also {
+        assertThat(it.uploads()).isEmpty()
+        assertThat(it.isTruncated).isFalse
+        assertThat(it.nextKeyMarker()).isNullOrEmpty()
+        assertThat(it.nextUploadIdMarker()).isNullOrEmpty()
+      }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2026)
+  fun `list MultipartUploads with negative max-uploads returns bad request`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    s3Client.createMultipartUpload {
+      it.bucket(bucketName)
+      it.key("key1")
+    }
+
+    assertThatThrownBy {
+      s3Client.listMultipartUploads {
+        it.bucket(bucketName)
+        it.maxUploads(-1)
+      }
+    }.isInstanceOf(AwsServiceException::class.java)
+      .hasMessageContaining("Service: S3, Status Code: 400")
+      .hasMessageContaining("Argument max-uploads must be an integer between 0 and 2147483647")
   }
 
   /**

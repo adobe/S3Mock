@@ -67,9 +67,9 @@
 
     <archunit.version>1.4.2</archunit.version>
 
-    <aws-kotlin.version>1.6.103</aws-kotlin.version>
+    <aws-kotlin.version>1.8.14</aws-kotlin.version>
 
-    <aws-v2.version>2.46.17</aws-v2.version>
+    <aws-v2.version>2.49.3</aws-v2.version>
 
     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
@@ -78,6 +78,9 @@
     <docker.image.name>adobe/s3mock</docker.image.name>
     <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
+
+    <httpclient5.version>5.6.2</httpclient5.version>
+    <httpcore5.version>5.4.3</httpcore5.version>
 
     <java.target.version>17</java.target.version>
     <java.version>25</java.version>
@@ -88,8 +91,6 @@
     <kotlin.compiler.jvmTarget>${java.target.version}</kotlin.compiler.jvmTarget>
     <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
     <kotlin.version>2.4.0</kotlin.version>
-    <ktlint-maven-plugin.version>3.7.1</ktlint-maven-plugin.version>
-    <license-maven-plugin-git.version>5.0.0</license-maven-plugin-git.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -110,7 +111,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
-    <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
+    <spotless-maven-plugin.version>3.8.0</spotless-maven-plugin.version>
     <spring-boot.version>4.1.0</spring-boot.version>
     <spring-test-profiler.version>0.1.2</spring-test-profiler.version>
     <testcontainers.version>2.0.5</testcontainers.version>
@@ -181,6 +182,24 @@
         <version>${jazzer.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpclient5.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpcore5.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
+        <version>${httpcore5.version}</version>
+      </dependency>
+      <dependency>
         <!-- Workaround: set version here to force dependencies to converge. -->
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
@@ -225,89 +244,85 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>com.github.ekryd.sortpom</groupId>
-          <artifactId>sortpom-maven-plugin</artifactId>
-          <version>${sortpom-maven-plugin.version}</version>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless-maven-plugin.version}</version>
           <configuration>
-            <encoding>${project.build.sourceEncoding}</encoding>
-            <keepBlankLines>true</keepBlankLines>
-            <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-            <sortDependencies>scope,groupId,artifactId</sortDependencies>
-            <sortModules>true</sortModules>
-            <sortPlugins>scope,groupId,artifactId</sortPlugins>
-            <sortProperties>true</sortProperties>
+            <!-- Only enforce/reformat files that changed since main - keeps license-header
+                 year bumps scoped to files actually touched (see INVARIANTS.md). -->
+            <ratchetFrom>origin/main</ratchetFrom>
+            <kotlin>
+              <ktlint/>
+              <licenseHeader>
+                <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless.txt</file>
+              </licenseHeader>
+            </kotlin>
+            <java>
+              <licenseHeader>
+                <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless.txt</file>
+              </licenseHeader>
+            </java>
+            <pom>
+              <sortPom>
+                <encoding>${project.build.sourceEncoding}</encoding>
+                <keepBlankLines>true</keepBlankLines>
+                <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
+                <sortDependencies>scope,groupId,artifactId</sortDependencies>
+                <sortModules>true</sortModules>
+                <sortPlugins>scope,groupId,artifactId</sortPlugins>
+                <sortProperties>true</sortProperties>
+              </sortPom>
+              <licenseHeader>
+                <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless-xml.txt</file>
+                <delimiter>&lt;project</delimiter>
+                <skipLinesMatching>^&lt;\?xml.*\?&gt;$</skipLinesMatching>
+              </licenseHeader>
+            </pom>
+            <formats>
+              <format>
+                <includes>
+                  <include>Makefile</include>
+                </includes>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless-hash.txt</file>
+                  <delimiter>^# Agents:</delimiter>
+                </licenseHeader>
+              </format>
+              <format>
+                <includes>
+                  <include>src/main/resources/**/*.properties</include>
+                  <include>src/test/resources/**/*.properties</include>
+                  <include>src/test/resources/**/*.factories</include>
+                </includes>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless-hash.txt</file>
+                  <delimiter>^[^#]</delimiter>
+                </licenseHeader>
+              </format>
+              <format>
+                <includes>
+                  <include>src/test/resources/logback.xml</include>
+                  <include>src/test/resources/com/**/*.xml</include>
+                </includes>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless-xml.txt</file>
+                  <delimiter>^&lt;[A-Za-z]</delimiter>
+                  <skipLinesMatching>^&lt;\?xml.*\?&gt;$</skipLinesMatching>
+                </licenseHeader>
+              </format>
+              <format>
+                <includes>
+                  <include>etc/checkstyle.xml</include>
+                  <include>src/test/resources/testng.xml</include>
+                </includes>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless-xml.txt</file>
+                  <delimiter>^&lt;!DOCTYPE</delimiter>
+                  <skipLinesMatching>^&lt;\?xml.*\?&gt;$</skipLinesMatching>
+                </licenseHeader>
+              </format>
+            </formats>
           </configuration>
-          <executions>
-            <execution>
-              <goals>
-                <goal>sort</goal>
-              </goals>
-              <phase>verify</phase>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>com.github.gantsign.maven</groupId>
-          <artifactId>ktlint-maven-plugin</artifactId>
-          <version>${ktlint-maven-plugin.version}</version>
-          <executions>
-            <execution>
-              <id>check-style</id>
-              <goals>
-                <!-- Uncomment to let plugin format code to match conventions. -->
-                <!--goal>format</goal-->
-                <goal>check</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>com.mycila</groupId>
-          <artifactId>license-maven-plugin</artifactId>
-          <version>${license-maven-plugin-git.version}</version>
-          <configuration>
-            <strictCheck>true</strictCheck>
-            <licenseSets>
-              <licenseSet>
-                <header>etc/license-template.txt</header>
-                <excludes>
-                  <exclude>.idea/**</exclude>
-                  <exclude>.springBeans</exclude>
-                  <exclude>.editorconfig</exclude>
-                  <exclude>**/*.jks</exclude>
-                  <exclude>**/sample*.txt</exclude>
-                  <exclude>COPYRIGHT</exclude>
-                  <exclude>LICENSE</exclude>
-                  <exclude>AUTHORS</exclude>
-                  <exclude>README.md</exclude>
-                  <exclude>.github/workflows/**</exclude>
-                  <exclude>CONTRIBUTING.md</exclude>
-                  <exclude>.gitattributes</exclude>
-                  <exclude>.gitignore</exclude>
-                  <exclude>.pre-commit-config.yaml</exclude>
-                  <exclude>src/main/resources/banner.txt</exclude>
-                  <exclude>.claude/**</exclude>
-                </excludes>
-              </licenseSet>
-            </licenseSets>
-            <mapping>
-              <java>SLASHSTAR_STYLE</java>
-            </mapping>
-            <properties>
-              <project.inceptionYear>2017</project.inceptionYear>
-            </properties>
-            <!-- Do not execute when skipping tests.
-              This also disables execution during a release. -->
-            <skip>${skipTests}</skip>
-          </configuration>
-          <dependencies>
-            <dependency>
-              <groupId>com.mycila</groupId>
-              <artifactId>license-maven-plugin-git</artifactId>
-              <!-- make sure you use the same version as license-maven-plugin -->
-              <version>${license-maven-plugin-git.version}</version>
-            </dependency>
-          </dependencies>
           <executions>
             <execution>
               <goals>
@@ -407,8 +422,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <dependencyConvergence></dependencyConvergence>
-              <requireUpperBoundDeps></requireUpperBoundDeps>
+              <dependencyConvergence/>
+              <requireUpperBoundDeps/>
             </rules>
           </configuration>
         </plugin>
@@ -607,8 +622,8 @@
     </pluginManagement>
     <plugins>
       <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>

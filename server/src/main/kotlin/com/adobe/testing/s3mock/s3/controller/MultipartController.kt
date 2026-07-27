@@ -129,6 +129,7 @@ class MultipartController(
     @RequestParam(name = UPLOAD_ID_MARKER, required = false) uploadIdMarker: String?,
   ): ResponseEntity<ListMultipartUploadsResult> {
     bucketService.verifyBucketExists(bucketName)
+    multipartService.verifyMaxUploads(maxUploads)
 
     val result =
       multipartService.listMultipartUploads(
@@ -197,6 +198,7 @@ class MultipartController(
     @RequestParam uploadId: UUID,
   ): ResponseEntity<ListPartsResult> {
     bucketService.verifyBucketExists(bucketName)
+    multipartService.verifyMaxParts(maxParts)
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
 
     val result =
