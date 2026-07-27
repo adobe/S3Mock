@@ -67,7 +67,7 @@
 
     <archunit.version>1.4.2</archunit.version>
 
-    <aws-kotlin.version>1.8.14</aws-kotlin.version>
+    <aws-kotlin.version>1.8.15</aws-kotlin.version>
 
     <aws-v2.version>2.49.3</aws-v2.version>
 
