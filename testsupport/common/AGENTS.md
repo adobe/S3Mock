@@ -31,7 +31,7 @@ com.adobe.testing.s3mock.store.region
 com.adobe.testing.s3mock.store.retainFilesOnExit
 ```
 
-`testsupport/testcontainers/` uses the same underlying properties but passes them as Docker environment variables — Spring Boot's relaxed binding maps `COM_ADOBE_TESTING_S3MOCK_STORE_INITIALBUCKETS` back to `com.adobe.testing.s3mock.store.initialBuckets` automatically. Both refer to the same `StoreProperties` fields in `server/`; this module just uses the Spring form directly.
+`testsupport/testcontainers/` uses the same underlying properties but passes them as Docker environment variables — Spring Boot's relaxed binding maps `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS` back to `com.adobe.testing.s3mock.store.initialBuckets` automatically. Both refer to the same `StoreProperties` fields in `server/`; this module just uses the Spring form directly.
 
 Constants for Spring property keys are defined in `S3MockStarter.Companion`. Constants for `S3MockApplication` itself (ports, silent mode, SSL params) live in `S3MockApplication.Companion`.
 

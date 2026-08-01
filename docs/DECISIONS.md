@@ -27,7 +27,7 @@ Significant design decisions with context and rationale. Read when you need to u
 
 **Context**: S3Mock needs an HTTP server that supports dual connectors (HTTP + HTTPS on separate ports), customizable Tomcat configuration (encoded slash handling), and a rich testing ecosystem.
 
-**Decision**: Use Spring Boot (currently 4.0.x) with an embedded Tomcat server.
+**Decision**: Use Spring Boot 4.x with an embedded Tomcat server.
 
 **Consequences**:
 - Spring Boot dependency management simplifies version alignment across Jackson, Tomcat, and test libraries
@@ -44,13 +44,13 @@ Significant design decisions with context and rationale. Read when you need to u
 
 **Context**: S3Mock was originally written in Java. Kotlin was introduced to reduce boilerplate for data classes, null safety, and idiomatic collection operations.
 
-**Decision**: All new code is written in Kotlin. Legacy Java code is migrated opportunistically. Kotlin version tracks the latest stable release; API/language compatibility targets 2.2; JVM target is 17 (bytecode); build toolchain uses JDK 25.
+**Decision**: All new code is written in Kotlin. Legacy Java code is migrated opportunistically. The Kotlin compiler version and build-toolchain JDK track the root `pom.xml`; API/language compatibility is fixed at 2.2 and the JVM bytecode target at 17 (the Spring Boot 4.x targets).
 
 **Consequences**:
 - Data classes replace verbose Java POJOs for DTOs and store metadata objects
 - `data class` `copy()` is used for immutable updates (e.g., creating delete markers)
 - Null safety enforced at the type system level — services use `?` types where S3 allows absent fields
-- Kotlin 2.x compiles against JDK 25 toolchain but emits JDK 17 bytecode — compatible with JDK 17+ runtimes
+- Kotlin compiles against the build-toolchain JDK (pinned in `pom.xml`) but emits JDK 17 bytecode — compatible with JDK 17+ runtimes
 - See **[docs/KOTLIN.md](KOTLIN.md)** for idioms, naming conventions, and anti-patterns
 
 ---

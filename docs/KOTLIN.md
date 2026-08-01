@@ -4,13 +4,13 @@ Canonical reference for Kotlin idioms, naming conventions, and code quality stan
 
 ## Compiler Settings
 
-S3Mock uses Kotlin 2.3+ with language and API compatibility set to **2.2**, following Spring Boot 4.x guidance:
+S3Mock fixes Kotlin language and API compatibility at **2.2** and the JVM bytecode target at **17**, following Spring Boot 4.x guidance. The Kotlin compiler and build-toolchain JDK versions track the root `pom.xml` and are deliberately not restated here (they change on every dependency bump):
 
-- **Kotlin compiler**: 2.3+
 - **Language/API version**: 2.2 (`-language-version 2.2`, `-api-version 2.2`)
-- **JVM target**: 17 (build requires JDK 25; bytecode/JVM target 17)
+- **JVM target**: 17 (bytecode target 17)
+- **Kotlin compiler / build JDK**: see `pom.xml` (`kotlin.version`, `java.version`)
 
-This means you can use any syntax and standard library APIs available in Kotlin 2.2. Kotlin 2.3+ compiler improvements (performance, diagnostics) apply automatically.
+This means you can use any syntax and standard library APIs available in Kotlin 2.2. Newer compiler improvements (performance, diagnostics) apply automatically.
 
 ## Idioms
 

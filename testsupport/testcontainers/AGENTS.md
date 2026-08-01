@@ -28,15 +28,15 @@ val s3Client = S3Client.builder()
 
 ## Property Name Format
 
-S3MockContainer configures the container via Docker environment variables. Spring Boot inside the container automatically maps env vars to properties using its [relaxed binding](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.relaxed-binding.environment-variables) rules: uppercase the Spring property key and replace `.` with `_`.
+S3MockContainer configures the container via Docker environment variables. Spring Boot inside the container automatically maps env vars to properties using its [relaxed binding](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.relaxed-binding.environment-variables) rules: uppercase the Spring property key, replace `.` with `_`, and split each camelCase word boundary with `_`.
 
 ```
 Spring property                                    → Docker env var
-com.adobe.testing.s3mock.store.initialBuckets      → COM_ADOBE_TESTING_S3MOCK_STORE_INITIALBUCKETS
+com.adobe.testing.s3mock.store.initialBuckets      → COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS
 com.adobe.testing.s3mock.store.root                → COM_ADOBE_TESTING_S3MOCK_STORE_ROOT
-com.adobe.testing.s3mock.store.validKmsKeys        → COM_ADOBE_TESTING_S3MOCK_STORE_VALIDKMSKEYS
+com.adobe.testing.s3mock.store.validKmsKeys        → COM_ADOBE_TESTING_S3MOCK_STORE_VALID_KMS_KEYS
 com.adobe.testing.s3mock.store.region              → COM_ADOBE_TESTING_S3MOCK_STORE_REGION
-com.adobe.testing.s3mock.store.retainFilesOnExit   → COM_ADOBE_TESTING_S3MOCK_STORE_RETAINFILESONEXIT
+com.adobe.testing.s3mock.store.retainFilesOnExit   → COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT
 ```
 
 Both representations refer to the same underlying `StoreProperties` / `ControllerProperties` field in `server/`. `testsupport/common/` passes the Spring form directly (in-process); this module passes the env var form to Docker. They are two representations of the same property, not two independent formats.
@@ -53,7 +53,7 @@ Both representations refer to the same underlying `StoreProperties` / `Controlle
 
 ## Adding New Configuration
 
-When a new property is added to `StoreProperties` or `ControllerProperties` in `server/`, derive the env var key by uppercasing the Spring property name and replacing `.` with `_`:
+When a new property is added to `StoreProperties` or `ControllerProperties` in `server/`, derive the env var key by uppercasing the Spring property name, replacing `.` with `_`, and splitting each camelCase word boundary with `_` (e.g. `initialBuckets` → `INITIAL_BUCKETS`):
 
 1. Add a `private const val PROP_X = "COM_ADOBE_TESTING_S3MOCK_..."` constant in `S3MockContainer.Companion`
 2. Add a `fun withX(value: ...): S3MockContainer = withEnv(PROP_X, value.toString())` method
