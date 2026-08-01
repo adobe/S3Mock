@@ -641,9 +641,9 @@ make integration-tests
 ```
 
 **Technology:**
-- S3Mock is written in Kotlin 2.3+ (language/API compatibility: 2.2) with Spring Boot 4.0
+- S3Mock is written in Kotlin (language/API compatibility: 2.2) with Spring Boot 4.x
 - All tests are written in Kotlin
-- JVM bytecode target: 17; building and running from source requires JDK 25 (per Spring Boot 4.x guidance), while the packaged artifacts run on Java 17+.
+- JVM bytecode target: 17; the packaged artifacts run on Java 17+. Building from source requires a newer JDK — see **Requirements** above (exact version pinned in the root `pom.xml`).
 
 ## Contributing
 

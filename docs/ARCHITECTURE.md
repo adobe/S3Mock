@@ -104,7 +104,7 @@ ObjectController  — returns ETag header, 200 OK
 
 ## Key Components
 
-### Controller layer (`server/controller/`)
+### Controller layer (`s3/controller/`)
 
 Routing, header parsing, HTTP status codes, content negotiation. No business logic — all calls delegate immediately to services. Controllers never catch exceptions.
 
@@ -120,7 +120,7 @@ Routing, header parsing, HTTP status codes, content negotiation. No business log
 
 Header converters (Spring `HttpMessageConverter`): `TaggingHeaderConverter`, `HttpRangeHeaderConverter`, `ObjectCannedAclHeaderConverter`, `ObjectOwnershipHeaderConverter`, `ChecksumModeHeaderConverter`, `RegionConverter`.
 
-### Service layer (`server/service/`)
+### Service layer (`s3/service/`)
 
 All business logic, validation, and orchestration. Services throw `S3Exception` constants only — no HTTP awareness.
 
@@ -131,7 +131,7 @@ All business logic, validation, and orchestration. Services throw `S3Exception` 
 | `MultipartService` | Multipart upload lifecycle, part tracking, ETag assembly |
 | `ServiceBase` | Shared helpers (bucket/object existence checks) |
 
-### Store layer (`server/store/`)
+### Store layer (`s3/store/`)
 
 Filesystem persistence. Every write acquires a per-bucket (`BucketStore`) or per-object (`ObjectStore`) lock from a `ConcurrentHashMap` lock store. No cross-store transactions exist.
 
@@ -145,11 +145,11 @@ Filesystem persistence. Every write acquires a per-bucket (`BucketStore`) or per
 | `S3ObjectMetadata` | `data class` serialized to/from JSON as the object metadata sidecar |
 | `BucketMetadata` | `data class` serialized to/from JSON; holds bucket config and the key→UUID map |
 
-### DTO layer (`server/dto/`)
+### DTO layer (`s3/dto/`)
 
 Jackson 3 (`tools.jackson`) data classes for AWS XML request/response bodies. Element names must match the [AWS S3 API specification](https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html) exactly. `NON_EMPTY` inclusion — null/empty fields are omitted from serialized XML.
 
-### Utility layer (`server/util/`)
+### Utility layer (`s3/util/`)
 
 | Class | Responsibility |
 |---|---|
