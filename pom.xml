@@ -69,7 +69,7 @@
 
     <aws-kotlin.version>1.8.22</aws-kotlin.version>
 
-    <aws-v2.version>2.50.1</aws-v2.version>
+    <aws-v2.version>2.50.2</aws-v2.version>
 
     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
     <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
