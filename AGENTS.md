@@ -10,7 +10,7 @@ Lightweight S3 API mock server for local integration testing.
 > no restating of rules from the root.
 
 ## Tech Stack
-- **Kotlin 2.3+** (language/API compatibility: 2.2; JVM target: 17; build toolchain: JDK 25 — per Spring Boot 4.x guidance), Spring Boot 4.0.x, Maven 3.9+
+- **Kotlin** (language/API compatibility 2.2, JVM bytecode target 17 — the fixed Spring Boot 4.x targets), Spring Boot 4.x, Maven 3.9+. Exact Kotlin/Spring Boot/build-JDK versions are pinned in the root [`pom.xml`](pom.xml) — do not restate them here (they drift on every dependency bump)
 - **Testing**: JUnit 5, Mockito, AssertJ, Testcontainers
 - **Container**: OCI image built by Spring Boot / Cloud Native Buildpacks (BellSoft Alpaquita Linux `musl` builder, multi-arch)
 
@@ -21,7 +21,7 @@ Lightweight S3 API mock server for local integration testing.
 | `server/` | Core implementation (Controller→Service→Store); also builds the OCI Docker image | [server/AGENTS.md](server/AGENTS.md) |
 | `integration-tests/` | AWS SDK integration tests | [integration-tests/AGENTS.md](integration-tests/AGENTS.md) |
 | `testsupport/` | JUnit 5, Testcontainers, TestNG integrations | [testsupport/AGENTS.md](testsupport/AGENTS.md) |
-| `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md) | — |
+| `docs/` | Convention docs ([KOTLIN.md](docs/KOTLIN.md), [SPRING.md](docs/SPRING.md), [TESTING.md](docs/TESTING.md), [JAVA.md](docs/JAVA.md)) | — |
 
 ## Architecture
 
