@@ -79,7 +79,7 @@
     <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
 
-    <httpclient5.version>5.6.2</httpclient5.version>
+    <httpclient5.version>5.6.4</httpclient5.version>
     <httpcore5.version>5.4.3</httpcore5.version>
 
     <java.target.version>17</java.target.version>
