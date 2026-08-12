@@ -661,4 +661,4 @@ Licensed under the Apache License 2.0 - see [LICENSE](LICENSE).
 
 [![IntelliJ IDEA](https://resources.jetbrains.com/storage/products/company/brand/logos/IntelliJ_IDEA.svg)](https://jb.gg/OpenSourceSupport)
 
-[![Star History](https://api.star-history.com/svg?repos=adobe/S3Mock&type=Date)](https://www.star-history.com/#adobe/S3Mock&Date)
+[![Star History](https://star-history.dera.page/svg?repos=adobe/S3Mock&type=Date)](https://star-history.dera.page/#adobe/S3Mock&Date)
