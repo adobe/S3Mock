@@ -197,20 +197,26 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
     * fix: switched the image's GC from ZGC to Serial GC. ZGC's concurrent-collection overhead was too costly at the container's tuned low-memory footprint, causing `-XX:+ExitOnOutOfMemoryError`-triggered JVM exits under concurrent load (surfacing to clients as `Connection reset`) — Serial GC's fully-compacting collections reclaim memory more reliably at this heap size.
   * chore: The `integration-tests` module now starts one S3Mock container per test class via Testcontainers instead of the fabric8 `docker-maven-plugin`, giving each test class full state isolation.
 * Version updates (deliverable dependencies)
-  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.49.3
-  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.8.14
+  * Bump spring-boot.version from 4.1.0 to 4.1.1 
+  * Bump software.amazon.awssdk:bom from 2.46.11 to 2.53.2
+  * Bump aws.sdk.kotlin:s3-jvm from 1.6.96 to 1.8.32
   * Bump kotlin.version from 2.3.21 to 2.4.10
 * Version updates (build dependencies)
-  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.8.0
-  * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.2 to 0.2.2
+  * Bump com.diffplug.spotless:spotless-maven-plugin from 3.8.0 to 3.10.0
+  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.11.0
+  * Bump com.tngtech.archunit:archunit-junit5 from 1.4.2 to 1.5.0
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.2 to 0.3.0
+  * Bump org.apache.maven:apache-maven from 3.9.14 to 3.9.16
   * Bump org.apache.maven.plugins:maven-jar-plugin from 3.5.0 to 3.5.1
+  * Bump org.xmlunit:xmlunit-assertj3 from 2.12.0 to 2.13.0
   * Bump actions/checkout from 7.0.0 to 7.0.1
-  * Bump actions/setup-java from 5.3.0 to 5.6.0
-  * Bump actions/stale from 10.3.0 to 10.4.0
+  * Bump actions/setup-java from 5.3.0 to 5.7.0
+  * Bump actions/stale from 10.3.0 to 11.0.0
+  * Bump docker/setup-buildx-action from 4.2.0 to 4.3.0
   * Bump docker/setup-qemu-action from 4.1.0 to 4.2.0
-  * Bump github/codeql-action from 4.36.2 to 4.37.3
+  * Bump github/codeql-action from 4.36.2 to 4.37.7
   * Bump ossf/scorecard-action from 2.4.3 to 2.4.4
-  * Bump step-security/harden-runner from 2.19.4 to 2.20.0
+  * Bump step-security/harden-runner from 2.19.4 to 2.21.1
 
 ## 5.1.0
 

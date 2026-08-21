@@ -79,9 +79,6 @@
     <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
 
-    <httpclient5.version>5.6.2</httpclient5.version>
-    <httpcore5.version>5.4.3</httpcore5.version>
-
     <java.target.version>17</java.target.version>
     <java.version>25</java.version>
     <jazzer.version>0.30.0</jazzer.version>
@@ -112,7 +109,7 @@
     <!-- Run Docker build by default -->
     <skipDocker>false</skipDocker>
     <spotless-maven-plugin.version>3.10.0</spotless-maven-plugin.version>
-    <spring-boot.version>4.1.0</spring-boot.version>
+    <spring-boot.version>4.1.1</spring-boot.version>
     <spring-test-profiler.version>0.3.0</spring-test-profiler.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <testng.version>7.12.0</testng.version>
@@ -180,24 +177,6 @@
         <groupId>com.code-intelligence</groupId>
         <artifactId>jazzer-junit</artifactId>
         <version>${jazzer.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.client5</groupId>
-        <artifactId>httpclient5</artifactId>
-        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
-        <version>${httpclient5.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5</artifactId>
-        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
-        <version>${httpcore5.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5-h2</artifactId>
-        <!-- Workaround: set version here to force dependencies to converge with AWS SDK v2's apache5-client. -->
-        <version>${httpcore5.version}</version>
       </dependency>
       <dependency>
         <!-- Workaround: set version here to force dependencies to converge. -->
