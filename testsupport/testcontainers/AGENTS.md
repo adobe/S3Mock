@@ -28,7 +28,7 @@ val s3Client = S3Client.builder()
 
 ## Property Name Format
 
-S3MockContainer configures the container via Docker environment variables. Spring Boot inside the container automatically maps env vars to properties using its [relaxed binding](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.relaxed-binding.environment-variables) rules: uppercase the Spring property key, replace `.` with `_`, and split each camelCase word boundary with `_`.
+S3MockContainer configures the container via Docker environment variables. Spring Boot inside the container automatically maps env vars to properties using its [relaxed binding](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.relaxed-binding.environment-variables) rules: it uppercases the Spring property key and treats `_` as a separator, so it binds `INITIAL_BUCKETS` and `INITIALBUCKETS` equally well. As a project convention we derive the env var key by uppercasing the Spring property key, replacing `.` with `_`, and inserting `_` at each camelCase word boundary for readability.
 
 ```
 Spring property                                    → Docker env var
@@ -53,7 +53,7 @@ Both representations refer to the same underlying `StoreProperties` / `Controlle
 
 ## Adding New Configuration
 
-When a new property is added to `StoreProperties` or `ControllerProperties` in `server/`, derive the env var key by uppercasing the Spring property name, replacing `.` with `_`, and splitting each camelCase word boundary with `_` (e.g. `initialBuckets` → `INITIAL_BUCKETS`):
+When a new property is added to `StoreProperties` or `ControllerProperties` in `server/`, derive the env var key using the project convention (see [Property Name Format](#property-name-format)): uppercase the Spring property name, replace `.` with `_`, and insert `_` at each camelCase word boundary for readability (e.g. `initialBuckets` → `INITIAL_BUCKETS`). Spring's relaxed binding would accept `INITIALBUCKETS` too, but the split form is clearer:
 
 1. Add a `private const val PROP_X = "COM_ADOBE_TESTING_S3MOCK_..."` constant in `S3MockContainer.Companion`
 2. Add a `fun withX(value: ...): S3MockContainer = withEnv(PROP_X, value.toString())` method
