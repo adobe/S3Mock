@@ -203,7 +203,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump kotlin.version from 2.3.21 to 2.4.10
 * Version updates (build dependencies)
   * Bump com.diffplug.spotless:spotless-maven-plugin from 3.8.0 to 3.10.0
-  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.11.0
+  * Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 14.0.0
   * Bump com.tngtech.archunit:archunit-junit5 from 1.4.2 to 1.5.0
   * Bump digital.pragmatech.testing:spring-test-profiler from 0.1.2 to 0.3.0
   * Bump org.apache.maven:apache-maven from 3.9.14 to 3.9.16
