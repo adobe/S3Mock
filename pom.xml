@@ -470,6 +470,14 @@
           <configuration>
             <autoVersionSubmodules>true</autoVersionSubmodules>
             <goals>deploy -DskipTests -Prelease -P!build-docker-image -Ppush-docker-image</goals>
+            <!-- Skip Spotless during the release. The source already passed spotless:check in
+                 CI and every PRB. The maven-release-plugin rewrites every pom to set the
+                 release/next-dev version, and its JDOM writer normalizes empty elements to
+                 `<foo />` (with a space), which Spotless sortPom would then reject (`<foo/>`) -
+                 a violation the plugin introduces itself, not present in the committed source.
+                 `arguments` is passed to both the prepare (preparationGoals) and perform
+                 (goals) forked Maven builds. -->
+            <arguments>-Dspotless.check.skip=true</arguments>
             <preparationGoals>clean install</preparationGoals>
             <tagNameFormat>@{project.version}</tagNameFormat>
           </configuration>
