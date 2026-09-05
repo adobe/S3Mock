@@ -104,6 +104,39 @@ internal class ObjectTaggingControllerTest : BaseControllerTest() {
   }
 
   @Test
+  fun testGetObjectTagging_NoTags_ReturnsEmptyTagSet() {
+    givenBucket()
+    val key = "name"
+    // No tags were ever set on the object: S3 answers with a Tagging document
+    // carrying an empty TagSet, not with an empty body.
+    val s3ObjectMetadata = s3ObjectMetadata(key, UUID.randomUUID().toString())
+    whenever(objectService.verifyObjectExists("test-bucket", key, null))
+      .thenReturn(s3ObjectMetadata)
+
+    val uri =
+      UriComponentsBuilder
+        .fromUriString("/test-bucket/$key")
+        .queryParam(AwsHttpParameters.TAGGING, "ignored")
+        .build()
+        .toString()
+    mockMvc
+      .perform(
+        get(uri)
+          .accept(MediaType.APPLICATION_XML)
+          .contentType(MediaType.APPLICATION_XML),
+      ).andExpect(status().isOk)
+      // Assert the literal wire format instead of round-tripping through the same
+      // mapper the controller uses: the point of this test is that <TagSet> is
+      // present in the response body even when there is nothing to report.
+      .andExpect(
+        content().string(
+          """<?xml version="1.0" encoding="UTF-8"?>""" +
+            """<Tagging xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><TagSet/></Tagging>""",
+        ),
+      )
+  }
+
+  @Test
   fun testPutObjectTagging_Ok() {
     givenBucket()
     val key = "name"
