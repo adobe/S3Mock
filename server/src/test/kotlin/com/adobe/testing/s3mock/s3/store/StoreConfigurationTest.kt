@@ -156,6 +156,33 @@ internal class StoreConfigurationTest {
   }
 
   @Test
+  fun rootFolder_createsNestedMissingDirectories(
+    @TempDir tempDir: Path,
+  ) {
+    val nested = tempDir.resolve("missing/nested/root")
+
+    val properties = StoreProperties(false, nested.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+    val root = StoreConfiguration().rootFolder(properties)
+
+    assertThat(root).isEqualTo(nested.toFile())
+    assertThat(root).isDirectory()
+  }
+
+  @Test
+  fun rootFolder_failsFastWhenRootIsARegularFile(
+    @TempDir tempDir: Path,
+  ) {
+    val existingFile = tempDir.resolve("notADirectory")
+    assertThat(existingFile.toFile().createNewFile()).isTrue()
+
+    val properties = StoreProperties(false, existingFile.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+
+    assertThatThrownBy { StoreConfiguration().rootFolder(properties) }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessageContaining("is not a directory")
+  }
+
+  @Test
   fun rootFolder_failsFastWhenRootIsNotWritable(
     @TempDir tempDir: Path,
   ) {

@@ -333,6 +333,14 @@ volumes:
 > `docker run --rm -v <project>_s3mockdata:/v alpine ls /v` to list its contents. If you need a
 > predictable, browsable host path instead, use a bind mount
 > (`./locals3root:/s3mockroot`), keeping in mind the ownership requirement above.
+>
+> A **relative** `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` (e.g. `data` instead of `/data`) resolves
+> against the container's working directory, which the image sets to `/` — so `data` resolves
+> to `/data`, matching a volume mounted at `/data`. This is unrelated to the `/s3mockroot`
+> named-volume requirement above: prefer an absolute path in general so the resolved location
+> doesn't depend on the image's working directory. The resolved absolute root folder is always
+> logged at startup, alongside the configured value, to make a mismatch between the two easy to
+> spot.
 
 ### Testcontainers
 

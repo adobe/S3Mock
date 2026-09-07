@@ -340,6 +340,12 @@
       Release-only profile: builds both linux/amd64 and linux/arm64 images (arm64 via QEMU
       emulation on an amd64 runner), publishes each to a temporary per-architecture tag on
       Docker Hub, then merges them into a single multi-architecture manifest for the final tags.
+
+      Duplicates the build-helper-maven-plugin/exec-maven-plugin declarations from
+      build-docker-image above rather than sharing them: the two profiles are mutually
+      exclusive at release time (the root pom's release goals pass
+      "-P!build-docker-image -Ppush-docker-image"), and this profile's executions build/push
+      both architectures instead of just the host one.
     -->
     <profile>
       <id>push-docker-image</id>
@@ -382,6 +388,7 @@
                 <configuration>
                   <executable>docker</executable>
                   <arguments>
+                    <argument>buildx</argument>
                     <argument>build</argument>
                     <argument>--platform</argument>
                     <argument>linux/amd64</argument>
@@ -401,6 +408,7 @@
                 <configuration>
                   <executable>docker</executable>
                   <arguments>
+                    <argument>buildx</argument>
                     <argument>build</argument>
                     <argument>--platform</argument>
                     <argument>linux/arm64</argument>

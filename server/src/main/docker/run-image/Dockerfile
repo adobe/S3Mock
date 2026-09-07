@@ -36,3 +36,12 @@ RUN mkdir -p /s3mockroot && chown "${CNB_USER_ID}:${CNB_GROUP_ID}" /s3mockroot
 
 # Restore the non-root user the buildpack lifecycle and the launched app run as.
 USER ${CNB_USER_ID}:${CNB_GROUP_ID}
+
+# The default Paketo/Buildpacks launch working directory is /workspace, whereas the pre-5.2
+# root-based image had no explicit WORKDIR (defaulting to /). A *relative*
+# COM_ADOBE_TESTING_S3MOCK_STORE_ROOT therefore silently resolved to a different absolute path
+# after the 5.2 migration (e.g. "s3root" -> /workspace/s3root instead of /s3root): the app still
+# started and served requests successfully, writing into a directory a mounted volume never
+# touched, so persisted data was silently lost on container recreation. Restoring "/" as the
+# working directory keeps relative store roots resolving exactly as they did before 5.2.
+WORKDIR /

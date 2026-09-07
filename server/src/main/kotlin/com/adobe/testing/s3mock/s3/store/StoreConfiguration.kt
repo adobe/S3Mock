@@ -135,16 +135,16 @@ class StoreConfiguration {
         }
       } else {
         val dir = File(rootPath)
-        if (dir.exists()) {
-          LOG.info(
-            "Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-            dir.absolutePath,
-            properties.retainFilesOnExit,
-          )
-        } else {
-          check(dir.mkdir()) {
+        if (!dir.exists()) {
+          // mkdirs() creates any missing parent directories (mkdir() only creates the leaf and
+          // fails for nested paths). It also returns false if another process already created
+          // the directory in the meantime, so tolerate that race instead of failing spuriously.
+          check(dir.mkdirs() || dir.isDirectory) {
             ("Root folder could not be created. Path: ${dir.absolutePath}")
           }
+        }
+        check(dir.isDirectory) {
+          "Root folder \"${dir.absolutePath}\" exists but is not a directory."
         }
         dir
       }
@@ -159,9 +159,14 @@ class StoreConfiguration {
         "that user."
     }
 
+    // Log both the configured value and its resolved absolute path: a *relative* store root
+    // resolves against the process's current working directory, which is easy to misconfigure
+    // (e.g. against a mounted volume) without any error - see
+    // https://github.com/adobe/S3Mock/issues/3139.
     LOG.info(
-      "Successfully created \"{}\" as root folder. Will retain files on exit: {}",
+      "Using \"{}\" (configured as \"{}\") as root folder. Will retain files on exit: {}",
       root.absolutePath,
+      rootPath ?: "<default temp-dir>",
       properties.retainFilesOnExit,
     )
     return root
