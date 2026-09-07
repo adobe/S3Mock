@@ -15,6 +15,9 @@
  */
 package com.adobe.testing.s3mock.testcontainers
 
+import com.github.dockerjava.api.model.Bind
+import com.github.dockerjava.api.model.HostConfig
+import com.github.dockerjava.api.model.Volume
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -90,6 +93,31 @@ class S3MockContainer(
   fun withInitialBuckets(initialBuckets: String): S3MockContainer = withEnv(PROP_INITIAL_BUCKETS, initialBuckets)
 
   /**
+   * Mount a Docker *named volume* as the S3Mock store root ([STORE_ROOT_MOUNT_PATH]) so data
+   * persists across container restarts **without** running the container as root.
+   *
+   * The S3Mock OCI image pre-creates [STORE_ROOT_MOUNT_PATH] owned by the non-root `cnb` user it
+   * runs as. Docker initialises a fresh named volume with that directory's ownership, so the
+   * non-root process can write into the mounted volume — unlike a bind mount, which keeps its host
+   * ownership and therefore requires [withVolumeAsRoot]. Combine with [withRetainFilesOnExit] to
+   * keep the data after the container shuts down.
+   *
+   * Docker creates the named volume on demand if it does not exist yet. The caller owns its
+   * lifecycle (e.g. removing it afterwards).
+   *
+   * @param volumeName name of the Docker named volume to mount
+   */
+  fun withNamedVolume(volumeName: String): S3MockContainer {
+    withEnv(PROP_ROOT_DIRECTORY, STORE_ROOT_MOUNT_PATH)
+    return withCreateContainerCmdModifier { cmd ->
+      val hostConfig = cmd.hostConfig ?: HostConfig.newHostConfig()
+      val existing = hostConfig.binds ?: emptyArray()
+      hostConfig.withBinds(*existing, Bind(volumeName, Volume(STORE_ROOT_MOUNT_PATH)))
+      cmd.withHostConfig(hostConfig)
+    }
+  }
+
+  /**
    * Mount a volume from the host system for the S3Mock to use as the "root".
    * Docker must be able to read / write into this directory (!)
    *
@@ -99,12 +127,14 @@ class S3MockContainer(
    * and every write fails with an HTTP 500. Running as `root` sidesteps the host/container UID
    * mismatch and restores the writable behaviour of the previous root-based image.
    *
+   * For a Docker *named volume* prefer [withNamedVolume], which stays non-root.
+   *
    * @param root absolute path in host system
    */
   fun withVolumeAsRoot(root: String): S3MockContainer {
-    withEnv(PROP_ROOT_DIRECTORY, "/s3mockroot")
+    withEnv(PROP_ROOT_DIRECTORY, STORE_ROOT_MOUNT_PATH)
     withCreateContainerCmdModifier { it.withUser("0:0") }
-    return withFileSystemBind(root, "/s3mockroot", BindMode.READ_WRITE)
+    return withFileSystemBind(root, STORE_ROOT_MOUNT_PATH, BindMode.READ_WRITE)
   }
 
   /**
@@ -146,6 +176,12 @@ class S3MockContainer(
     private const val S3MOCK_DEFAULT_VECTORS_HTTP_PORT = 9092
     private const val S3MOCK_DEFAULT_VECTORS_HTTPS_PORT = 9193
     private val DEFAULT_IMAGE_NAME: DockerImageName = DockerImageName.parse(IMAGE_NAME)
+
+    /**
+     * Store-root mount point pre-created (owned by the non-root `cnb` user) in the S3Mock OCI image.
+     * Used by [withNamedVolume] and [withVolumeAsRoot] as the in-container store-root path.
+     */
+    private const val STORE_ROOT_MOUNT_PATH = "/s3mockroot"
 
     private const val PROP_SPRING_PROFILES_ACTIVE = "SPRING_PROFILES_ACTIVE"
     private const val PROFILE_VECTORS = "vectors"

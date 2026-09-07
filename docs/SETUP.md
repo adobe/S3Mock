@@ -36,7 +36,7 @@ S3Mock is configured via environment variables (Docker / Testcontainers) or Spri
 
 | Environment variable | Spring property | Default | Description |
 |---|---|---|---|
-| `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` | `com.adobe.testing.s3mock.store.root` | temp dir | Storage root directory |
+| `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` | `com.adobe.testing.s3mock.store.root` | temp dir | Storage root directory (use `/s3mockroot` to persist to a mounted Docker named volume) |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT` | `com.adobe.testing.s3mock.store.retainFilesOnExit` | `false` | Keep files on shutdown |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_REGION` | `com.adobe.testing.s3mock.store.region` | `us-east-1` | AWS region |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS` | `com.adobe.testing.s3mock.store.initialBuckets` | _(none)_ | Comma-separated bucket names to create on startup |
@@ -56,15 +56,19 @@ Or with Docker directly:
 docker run -p 9090:9090 -p 9191:9191 adobe/s3mock
 ```
 
-With persistent storage:
+With persistent storage (named volume):
 ```bash
 docker run \
   -p 9090:9090 -p 9191:9191 \
-  -e COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/data \
+  -e COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot \
   -e COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT=true \
-  -v /local/path:/data \
+  -v s3mockdata:/s3mockroot \
   adobe/s3mock
 ```
+
+`/s3mockroot` is pre-created in the image owned by the non-root `cnb` user the container runs as,
+so a Docker named volume mounted there is writable without running as root. A bind mount
+(`-v /local/path:/s3mockroot`) keeps its host ownership and must be writable by uid 1000 instead.
 
 ## Running Tests
 
@@ -119,3 +123,4 @@ MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT=unrestricted docker run -p 9090:9090 -p 9191
 | `NoClassDefFoundError` in in-process test | Spring Boot version mismatch | Ensure your project is Spring Boot 4.x compatible |
 | HTTPS connection refused | Client not trusting self-signed cert | Configure trust-all-certs on your AWS SDK client |
 | Empty bucket after restart | `retainFilesOnExit` defaults to false | Set `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT=true` and use a fixed `STORE_ROOT` |
+| HTTP 500 / `not writable` at startup when mounting a volume | Docker named volume or bind mount not writable by the non-root `cnb` user | Mount a **named volume** at `/s3mockroot` and set `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot`; for a bind mount, make the host directory writable by uid 1000 |

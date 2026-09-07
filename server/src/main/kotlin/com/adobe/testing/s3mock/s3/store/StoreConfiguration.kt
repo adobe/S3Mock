@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.s3.dto.ObjectOwnership
@@ -149,6 +148,16 @@ class StoreConfiguration {
         }
         dir
       }
+
+    check(root.canWrite() && root.canExecute()) {
+      "Root folder \"${root.absolutePath}\" is not writable/traversable by the current user " +
+        "(\"${System.getProperty("user.name")}\"). Grant that user write and execute permission on the " +
+        "directory (and its parents). If running the S3Mock Docker image: mount a named Docker volume at " +
+        "/s3mockroot and set COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot - the image runs as the " +
+        "non-root 'cnb' user and pre-creates that directory, so Docker makes a named volume mounted there " +
+        "writable; a bind-mounted host directory instead keeps its host ownership and must be writable by " +
+        "that user."
+    }
 
     LOG.info(
       "Successfully created \"{}\" as root folder. Will retain files on exit: {}",

@@ -76,6 +76,12 @@
     <checkstyle.version>14.0.0</checkstyle.version>
 
     <docker.image.name>adobe/s3mock</docker.image.name>
+    <!--
+      Local-only Cloud Native Buildpacks run image (see server/src/main/docker/run-image/Dockerfile).
+      It is built into the daemon and baked into the published app image, so it is never pushed to a
+      registry itself.
+    -->
+    <docker.run.image.name>adobe/s3mock-run</docker.run.image.name>
     <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
 
@@ -231,7 +237,7 @@
                  year bumps scoped to files actually touched (see INVARIANTS.md). -->
             <ratchetFrom>origin/main</ratchetFrom>
             <kotlin>
-              <ktlint />
+              <ktlint/>
               <licenseHeader>
                 <file>${maven.multiModuleProjectDirectory}/etc/license-header-spotless.txt</file>
               </licenseHeader>
@@ -401,8 +407,8 @@
               <requireJavaVersion>
                 <version>${java.version}</version>
               </requireJavaVersion>
-              <dependencyConvergence />
-              <requireUpperBoundDeps />
+              <dependencyConvergence/>
+              <requireUpperBoundDeps/>
             </rules>
           </configuration>
         </plugin>
