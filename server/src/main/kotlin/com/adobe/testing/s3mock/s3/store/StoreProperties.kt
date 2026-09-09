@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -25,7 +24,11 @@ data class StoreProperties(
 // True if files should be retained when S3Mock exits gracefully.
   // False to let S3Mock delete all files when S3Mock exits gracefully.
   @param:DefaultValue("false") val retainFilesOnExit: Boolean,
-  // The root directory to use. If omitted a default temp-dir will be used.
+  // The root directory to use for file storage. If omitted a default temp-dir will be used.
+  // May be set directly as a JVM/Spring property or via the COM_ADOBE_TESTING_S3MOCK_STORE_ROOT
+  // env var (e.g. in the Docker image or Testcontainers). Can be an arbitrary absolute or relative
+  // path, as long as it is writable by the user the process runs as; a relative path resolves
+  // against the process's working directory, same as any other relative path passed to the JVM.
   @param:DefaultValue("") val root: String,
   @param:DefaultValue("") val validKmsKeys: Set<String>,
   // A comma separated list of buckets that are to be created at startup.

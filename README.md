@@ -302,19 +302,45 @@ services:
       - 9191:9191
 ```
 
-**With persistent storage:**
+**With persistent storage (named volume):**
 ```yaml
 services:
   s3mock:
     image: adobe/s3mock:latest
     environment:
-      - COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=containers3root
+      # /s3mockroot is pre-created in the image, owned by the non-root user the container runs as,
+      # so a mounted named volume is writable without running the container as root.
+      - COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot
       - COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT=true
     ports:
       - 9090:9090
     volumes:
-      - ./locals3root:/containers3root
+      - s3mockdata:/s3mockroot
+
+volumes:
+  s3mockdata:
 ```
+
+> The store root **must** be `/s3mockroot` for a Docker named volume: the image runs as the
+> non-root `cnb` user, and Docker only makes a named volume writable by that user when it is
+> mounted onto a directory that already exists in the image with that ownership. A bind mount
+> (`./host/path:/s3mockroot`) keeps its host ownership instead, so it must be writable by that
+> user (uid 1000).
+>
+> A Docker named volume (`s3mockdata:/s3mockroot` above) is **not** a host directory you can
+> browse directly — Docker manages its storage location internally. Use
+> `docker volume inspect <project>_s3mockdata` to find its `Mountpoint`, or
+> `docker run --rm -v <project>_s3mockdata:/v alpine ls /v` to list its contents. If you need a
+> predictable, browsable host path instead, use a bind mount
+> (`./locals3root:/s3mockroot`), keeping in mind the ownership requirement above.
+>
+> A **relative** `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` (e.g. `data` instead of `/data`) resolves
+> against the container's working directory, which the image sets to `/` — so `data` resolves
+> to `/data`, matching a volume mounted at `/data`. This is unrelated to the `/s3mockroot`
+> named-volume requirement above: prefer an absolute path in general so the resolved location
+> doesn't depend on the image's working directory. The resolved absolute root folder is always
+> logged at startup, alongside the configured value, to make a mismatch between the two easy to
+> spot.
 
 ### Testcontainers
 
@@ -443,7 +469,7 @@ Configure S3Mock using environment variables:
 
 | Variable                                              | Default             | Description                                                   |
 |-------------------------------------------------------|---------------------|---------------------------------------------------------------|
-| `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`                 | Java temp directory | Base directory for file storage                               |
+| `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT`                 | Java temp directory | Base directory for file storage (use `/s3mockroot` to persist to a mounted named volume) |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_REGION`               | `us-east-1`         | AWS region to mock                                            |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS`      | none                | Comma-separated list of buckets to create on startup          |
 | `COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT` | `false`             | Keep files after shutdown                                     |

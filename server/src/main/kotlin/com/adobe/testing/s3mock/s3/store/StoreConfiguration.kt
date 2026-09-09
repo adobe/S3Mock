@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.s3.dto.ObjectOwnership
@@ -136,23 +135,38 @@ class StoreConfiguration {
         }
       } else {
         val dir = File(rootPath)
-        if (dir.exists()) {
-          LOG.info(
-            "Using existing folder \"{}\" as root folder. Will retain files on exit: {}",
-            dir.absolutePath,
-            properties.retainFilesOnExit,
-          )
-        } else {
-          check(dir.mkdir()) {
+        if (!dir.exists()) {
+          // mkdirs() creates any missing parent directories (mkdir() only creates the leaf and
+          // fails for nested paths). It also returns false if another process already created
+          // the directory in the meantime, so tolerate that race instead of failing spuriously.
+          check(dir.mkdirs() || dir.isDirectory) {
             ("Root folder could not be created. Path: ${dir.absolutePath}")
           }
+        }
+        check(dir.isDirectory) {
+          "Root folder \"${dir.absolutePath}\" exists but is not a directory."
         }
         dir
       }
 
+    check(root.canWrite() && root.canExecute()) {
+      "Root folder \"${root.absolutePath}\" is not writable/traversable by the current user " +
+        "(\"${System.getProperty("user.name")}\"). Grant that user write and execute permission on the " +
+        "directory (and its parents). If running the S3Mock Docker image: mount a named Docker volume at " +
+        "/s3mockroot and set COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot - the image runs as the " +
+        "non-root 'cnb' user and pre-creates that directory, so Docker makes a named volume mounted there " +
+        "writable; a bind-mounted host directory instead keeps its host ownership and must be writable by " +
+        "that user."
+    }
+
+    // Log both the configured value and its resolved absolute path: a *relative* store root
+    // resolves against the process's current working directory, which is easy to misconfigure
+    // (e.g. against a mounted volume) without any error - see
+    // https://github.com/adobe/S3Mock/issues/3139.
     LOG.info(
-      "Successfully created \"{}\" as root folder. Will retain files on exit: {}",
+      "Using \"{}\" (configured as \"{}\") as root folder. Will retain files on exit: {}",
       root.absolutePath,
+      rootPath ?: "<default temp-dir>",
       properties.retainFilesOnExit,
     )
     return root

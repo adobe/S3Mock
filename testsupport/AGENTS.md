@@ -55,7 +55,7 @@ val s3Mock = S3MockContainer("latest")
 // Access via s3Mock.httpEndpoint or s3Mock.httpsEndpoint
 ```
 
-Configuration methods: `withInitialBuckets()`, `withValidKmsKeys()`, `withRetainFilesOnExit()`, `withRoot()`, `withRegion()`, `withVectors()`, `withDebug()`, `withSpringProfiles()`.
+Configuration methods: `withInitialBuckets()`, `withValidKmsKeys()`, `withRetainFilesOnExit()`, `withRoot()`, `withRegion()`, `withVectors()`, `withDebug()`, `withSpringProfiles()`, `withNamedVolume()`, `withVolumeAsRoot()`.
 
 ## TestNG Listener
 

@@ -13,12 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.s3.dto.ObjectOwnership
 import com.adobe.testing.s3mock.s3.model.BucketMetadata
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import tools.jackson.databind.DeserializationFeature
@@ -125,6 +126,81 @@ internal class StoreConfigurationTest {
 
     assertThat(bucketStore.listBuckets()).isEmpty()
     assertThat(tempDir.listDirectoryEntries()).isEmpty()
+  }
+
+  @Test
+  fun rootFolder_usesExistingWritableDirectory(
+    @TempDir tempDir: Path,
+  ) {
+    val existing = tempDir.resolve("existingRoot")
+    assertThat(existing.toFile().mkdir()).isTrue()
+
+    val properties = StoreProperties(false, existing.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+    val root = StoreConfiguration().rootFolder(properties)
+
+    assertThat(root).isEqualTo(existing.toFile())
+    assertThat(root.canWrite()).isTrue()
+  }
+
+  @Test
+  fun rootFolder_createsMissingDirectory(
+    @TempDir tempDir: Path,
+  ) {
+    val missing = tempDir.resolve("createdRoot")
+
+    val properties = StoreProperties(false, missing.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+    val root = StoreConfiguration().rootFolder(properties)
+
+    assertThat(root).isEqualTo(missing.toFile())
+    assertThat(root).exists()
+  }
+
+  @Test
+  fun rootFolder_createsNestedMissingDirectories(
+    @TempDir tempDir: Path,
+  ) {
+    val nested = tempDir.resolve("missing/nested/root")
+
+    val properties = StoreProperties(false, nested.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+    val root = StoreConfiguration().rootFolder(properties)
+
+    assertThat(root).isEqualTo(nested.toFile())
+    assertThat(root).isDirectory()
+  }
+
+  @Test
+  fun rootFolder_failsFastWhenRootIsARegularFile(
+    @TempDir tempDir: Path,
+  ) {
+    val existingFile = tempDir.resolve("notADirectory")
+    assertThat(existingFile.toFile().createNewFile()).isTrue()
+
+    val properties = StoreProperties(false, existingFile.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+
+    assertThatThrownBy { StoreConfiguration().rootFolder(properties) }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessageContaining("is not a directory")
+  }
+
+  @Test
+  fun rootFolder_failsFastWhenRootIsNotWritable(
+    @TempDir tempDir: Path,
+  ) {
+    val readOnly = tempDir.resolve("readOnlyRoot")
+    assertThat(readOnly.toFile().mkdir()).isTrue()
+    assertThat(readOnly.toFile().setWritable(false, false)).isTrue()
+    assumeFalse(readOnly.toFile().canWrite(), "Unable to make temp dir read-only (running as root?)")
+    try {
+      val properties = StoreProperties(false, readOnly.toAbsolutePath().toString(), setOf(), listOf(), "us-east-1")
+
+      assertThatThrownBy { StoreConfiguration().rootFolder(properties) }
+        .isInstanceOf(IllegalStateException::class.java)
+        .hasMessageContaining(readOnly.toFile().absolutePath)
+        .hasMessageContaining("not writable")
+        .hasMessageContaining("named Docker volume")
+    } finally {
+      readOnly.toFile().setWritable(true, false)
+    }
   }
 
   companion object {

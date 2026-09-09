@@ -43,7 +43,9 @@ Both representations refer to the same underlying `StoreProperties` / `Controlle
 
 ## Footguns
 
-**`withVolumeAsRoot(root)`**: Docker must have read/write permission on the host path. Because the S3Mock image is built by Cloud Native Buildpacks and runs as the non-root `cnb` user, this method forces the container to run as `root` so it can write into the bind-mounted host directory regardless of the host directory's UID ownership (otherwise, on Linux, every write fails with HTTP 500). Verify Docker Desktop sharing settings before using this — if Docker cannot access the path at all, the container starts but writes are silently discarded.
+**`withNamedVolume(volumeName)`** (preferred for persistence): mounts a Docker *named volume* at `/s3mockroot` and points the store root there, staying **non-root**. The OCI image pre-creates `/s3mockroot` owned by the `cnb` user, and Docker initialises a fresh named volume with that directory's ownership, so the non-root process can write to it. Combine with `withRetainFilesOnExit(true)`. The caller owns the volume lifecycle (Docker auto-creates it; remove it in an `@AfterAll`).
+
+**`withVolumeAsRoot(root)`**: Docker must have read/write permission on the host path. Because the S3Mock image is built by Cloud Native Buildpacks and runs as the non-root `cnb` user, this method forces the container to run as `root` so it can write into the bind-mounted host directory regardless of the host directory's UID ownership (otherwise, on Linux, every write fails with HTTP 500). This is only needed for a **bind mount** (host directory), which keeps its host ownership; for a named volume prefer `withNamedVolume`. Verify Docker Desktop sharing settings before using this — if Docker cannot access the path at all, the container starts but writes are silently discarded.
 
 **`httpsEndpoint` requires trust-all-certificates**: `S3MockContainer` uses a self-signed SSL certificate. Any AWS SDK client connecting to `httpsEndpoint` must disable certificate validation (see usage example above). Forgetting this produces a `SSLHandshakeException` that looks like a connectivity issue.
 

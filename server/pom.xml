@@ -189,6 +189,15 @@
               CVEs reported by users' image scanners. Multi-arch (linux/amd64 + linux/arm64).
             -->
             <builder>bellsoft/buildpacks.builder:musl</builder>
+            <!--
+              Use the locally built custom run image (server/src/main/docker/run-image/Dockerfile)
+              which pre-creates a `cnb`-owned /s3mockroot so a mounted named volume is writable by
+              the non-root user (see https://github.com/adobe/S3Mock/issues/3139). The concrete
+              runImage tag is set per build-image execution below (it is architecture specific).
+              IF_NOT_PRESENT keeps the buildpack from trying to pull our local-only run image from a
+              registry, while still pulling the builder on a clean machine when it is absent.
+            -->
+            <pullPolicy>IF_NOT_PRESENT</pullPolicy>
             <env>
               <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
               <!-- Run jdeps + jlink to produce a minimal custom JRE (only required modules). -->
@@ -273,6 +282,33 @@
             </executions>
           </plugin>
           <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <!--
+                Build the custom run image (host architecture) before build-image runs, so the
+                buildpack can resolve it locally via the IF_NOT_PRESENT pull policy. It pre-creates
+                a `cnb`-owned /s3mockroot so named volumes are writable by the non-root user.
+              -->
+              <execution>
+                <id>build-run-image</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>build</argument>
+                    <argument>--tag</argument>
+                    <argument>${docker.run.image.name}:musl</argument>
+                    <argument>${project.basedir}/src/main/docker/run-image</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
             <executions>
@@ -285,6 +321,7 @@
                 <configuration>
                   <image>
                     <name>${docker.image.name}:${project.version}</name>
+                    <runImage>${docker.run.image.name}:musl</runImage>
                     <!-- Version tag names: major, minor, latest (patch is the image name above). -->
                     <tags>
                       <tag>${docker.image.name}:${parsedVersion.majorVersion}</tag>
@@ -303,6 +340,12 @@
       Release-only profile: builds both linux/amd64 and linux/arm64 images (arm64 via QEMU
       emulation on an amd64 runner), publishes each to a temporary per-architecture tag on
       Docker Hub, then merges them into a single multi-architecture manifest for the final tags.
+
+      Duplicates the build-helper-maven-plugin/exec-maven-plugin declarations from
+      build-docker-image above rather than sharing them: the two profiles are mutually
+      exclusive at release time (the root pom's release goals pass
+      "-P!build-docker-image -Ppush-docker-image"), and this profile's executions build/push
+      both architectures instead of just the host one.
     -->
     <profile>
       <id>push-docker-image</id>
@@ -328,6 +371,54 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <executions>
+              <!--
+                Build the custom run image for each architecture before build-image runs, so the
+                buildpack resolves it locally (IF_NOT_PRESENT) instead of pulling from a registry.
+                A local Docker image tag holds a single architecture, so amd64 and arm64 get
+                distinct tags referenced by the matching build-image execution below. arm64 is
+                emulated via QEMU (buildx) on the amd64 release runner. The run image only adds a
+                `cnb`-owned /s3mockroot so mounted named volumes are writable by the non-root user.
+              -->
+              <execution>
+                <id>build-run-image-amd64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>buildx</argument>
+                    <argument>build</argument>
+                    <argument>--platform</argument>
+                    <argument>linux/amd64</argument>
+                    <argument>--load</argument>
+                    <argument>--tag</argument>
+                    <argument>${docker.run.image.name}:musl-amd64</argument>
+                    <argument>${project.basedir}/src/main/docker/run-image</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>build-run-image-arm64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>buildx</argument>
+                    <argument>build</argument>
+                    <argument>--platform</argument>
+                    <argument>linux/arm64</argument>
+                    <argument>--load</argument>
+                    <argument>--tag</argument>
+                    <argument>${docker.run.image.name}:musl-arm64</argument>
+                    <argument>${project.basedir}/src/main/docker/run-image</argument>
+                  </arguments>
+                </configuration>
+              </execution>
               <!--
                 Merge the two per-architecture images into a single multi-arch manifest for the
                 final tags. Runs after both images have been published (package phase).
@@ -382,6 +473,7 @@
                 <configuration>
                   <image>
                     <name>${docker.image.name}:${project.version}-amd64</name>
+                    <runImage>${docker.run.image.name}:musl-amd64</runImage>
                     <imagePlatform>linux/amd64</imagePlatform>
                     <publish>true</publish>
                   </image>
@@ -396,6 +488,7 @@
                 <configuration>
                   <image>
                     <name>${docker.image.name}:${project.version}-arm64</name>
+                    <runImage>${docker.run.image.name}:musl-arm64</runImage>
                     <imagePlatform>linux/arm64</imagePlatform>
                     <publish>true</publish>
                   </image>
