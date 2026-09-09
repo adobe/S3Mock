@@ -153,11 +153,23 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.3.0 - PLANNED
 
 * Features and fixes
-  * fix: Restore the ability to persist data to a mounted Docker volume. Since the migration to the Cloud Native Buildpacks OCI image (which runs as the non-root `cnb` user), a mounted named volume was no longer writable. The image now pre-creates a `cnb`-owned `/s3mockroot` directory, so a Docker named volume mounted at `/s3mockroot` (with `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot`) is writable without running the container as root. S3Mock now also fails fast with a clear message when the configured store root is not writable, and `S3MockContainer.withNamedVolume(...)` plus a container restart persistence test were added. The image also restores `/` (rather than the Buildpacks default `/workspace`) as its working directory, so a *relative* `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` resolves exactly as it did before 5.2 instead of silently resolving under `/workspace` and missing the mounted volume; the resolved absolute root folder is now always logged at startup alongside the configured value. ([#3139](https://github.com/adobe/S3Mock/issues/3139))
+  * TBD
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 5.2.1
+
+* Features and fixes
+  * fix: Restore the ability to persist data to a mounted Docker volume. Since the migration to the Cloud Native Buildpacks OCI image (which runs as the non-root `cnb` user), a mounted named volume was no longer writable. The image now pre-creates a `cnb`-owned `/s3mockroot` directory, so a Docker named volume mounted at `/s3mockroot` (with `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT=/s3mockroot`) is writable without running the container as root. S3Mock now also fails fast with a clear message when the configured store root is not writable, creates nested store-root paths (not just a single missing directory), and `S3MockContainer.withNamedVolume(...)` plus a container restart persistence test were added. The image also restores `/` (rather than the Buildpacks default `/workspace`) as its working directory, so a *relative* `COM_ADOBE_TESTING_S3MOCK_STORE_ROOT` resolves exactly as it did before 5.2 instead of silently resolving under `/workspace` and missing the mounted volume; the resolved absolute root folder is now always logged at startup alongside the configured value. ([#3139](https://github.com/adobe/S3Mock/issues/3139))
+* Version updates (deliverable dependencies)
+  * N/A
+* Version updates (build dependencies)
+  * Bump actions/setup-java from 5.7.0 to 6.0.0
+  * Bump github/codeql-action from 4.37.7 to 4.37.9
+  * Bump docker/setup-qemu-action from 4.2.0 to 4.3.0
+  * Bump step-security/harden-runner from 2.21.0 to 2.21.1
 
 ## 5.2.0
 
@@ -216,7 +228,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
   * Bump docker/setup-qemu-action from 4.1.0 to 4.2.0
   * Bump github/codeql-action from 4.36.2 to 4.37.7
   * Bump ossf/scorecard-action from 2.4.3 to 2.4.4
-  * Bump step-security/harden-runner from 2.19.4 to 2.21.1
+  * Bump step-security/harden-runner from 2.19.4 to 2.21.0
 
 ## 5.1.0
 
