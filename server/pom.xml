@@ -372,6 +372,81 @@
             <artifactId>exec-maven-plugin</artifactId>
             <executions>
               <!--
+                Pre-pull the builder for each architecture into a distinct local tag before
+                build-image runs. The plugin-wide pullPolicy is IF_NOT_PRESENT (needed so the
+                locally-built, registry-less run image below resolves without a network pull),
+                but that policy is shared with the builder image: since both architectures would
+                otherwise reference the same `bellsoft/buildpacks.builder:musl` tag, whichever
+                architecture's build-image execution runs first leaves that tag cached, and the
+                second execution's IF_NOT_PRESENT check finds it "present" and reuses the wrong
+                platform instead of pulling its own (https://github.com/adobe/S3Mock/issues/3139).
+                Tagging each pulled platform under its own local tag, mirroring the run-image
+                pattern below, keeps both platform variants available simultaneously so the
+                matching build-image execution can reference the correct one directly.
+              -->
+              <execution>
+                <id>pull-builder-amd64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>pull</argument>
+                    <argument>--platform</argument>
+                    <argument>linux/amd64</argument>
+                    <argument>bellsoft/buildpacks.builder:musl</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>tag-builder-amd64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>tag</argument>
+                    <argument>bellsoft/buildpacks.builder:musl</argument>
+                    <argument>bellsoft/buildpacks.builder:musl-amd64</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>pull-builder-arm64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>pull</argument>
+                    <argument>--platform</argument>
+                    <argument>linux/arm64</argument>
+                    <argument>bellsoft/buildpacks.builder:musl</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>tag-builder-arm64</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <executable>docker</executable>
+                  <arguments>
+                    <argument>tag</argument>
+                    <argument>bellsoft/buildpacks.builder:musl</argument>
+                    <argument>bellsoft/buildpacks.builder:musl-arm64</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <!--
                 Build the custom run image for each architecture before build-image runs, so the
                 buildpack resolves it locally (IF_NOT_PRESENT) instead of pulling from a registry.
                 A local Docker image tag holds a single architecture, so amd64 and arm64 get
@@ -473,6 +548,13 @@
                 <configuration>
                   <image>
                     <name>${docker.image.name}:${project.version}-amd64</name>
+                    <!--
+                      Reference the amd64-only local tag pulled/tagged above, not the shared
+                      bellsoft/buildpacks.builder:musl tag: with pullPolicy IF_NOT_PRESENT, both
+                      architectures resolving the same tag would cause whichever build-image
+                      execution runs second to silently reuse the platform pulled by the first.
+                    -->
+                    <builder>bellsoft/buildpacks.builder:musl-amd64</builder>
                     <runImage>${docker.run.image.name}:musl-amd64</runImage>
                     <imagePlatform>linux/amd64</imagePlatform>
                     <publish>true</publish>
@@ -488,6 +570,8 @@
                 <configuration>
                   <image>
                     <name>${docker.image.name}:${project.version}-arm64</name>
+                    <!-- See build-image-amd64 above for why this must not use the shared tag. -->
+                    <builder>bellsoft/buildpacks.builder:musl-arm64</builder>
                     <runImage>${docker.run.image.name}:musl-arm64</runImage>
                     <imagePlatform>linux/arm64</imagePlatform>
                     <publish>true</publish>
