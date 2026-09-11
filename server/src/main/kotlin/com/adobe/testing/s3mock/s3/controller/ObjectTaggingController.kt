@@ -69,10 +69,10 @@ class ObjectTaggingController(
     val bucket = bucketService.verifyBucketExists(bucketName)
     val s3ObjectMetadata = objectService.verifyObjectExists(bucketName, key.key, versionId)
 
-    val tagging =
-      s3ObjectMetadata.tags
-        ?.takeIf { it.isNotEmpty() }
-        ?.let { Tagging(TagSet(it)) }
+    // S3 always answers with a Tagging document, carrying an empty TagSet when
+    // the object has no tags. Returning no body at all makes clients that expect
+    // the documented XML fail to parse the response.
+    val tagging = Tagging(TagSet(s3ObjectMetadata.tags.orEmpty()))
 
     return ResponseEntity
       .ok()
