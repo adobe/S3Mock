@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,9 +22,14 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Tag
 import software.amazon.awssdk.services.s3.model.Tagging
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
 internal class ObjectTaggingIT : S3TestBase() {
   private val s3Client: S3Client = createS3Client()
+  private val httpClient: HttpClient = createHttpClient()
 
   @Test
   @S3VerifiedSuccess(year = 2025)
@@ -46,6 +51,57 @@ internal class ObjectTaggingIT : S3TestBase() {
           it.key(key)
         }.tagSet(),
     ).isEmpty()
+  }
+
+  @Test
+  @S3VerifiedFailure(
+    year = 2026,
+    reason = "No credentials sent in plain HTTP request",
+  )
+  fun `GET ObjectTagging returns an empty TagSet element with no tags`(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+      },
+      RequestBody.fromString("foo"),
+    )
+
+    // The AWS SDK tolerates an empty body, so it cannot tell "no tags" from "no
+    // document". Read the raw response to pin down the wire format clients parse.
+    val body = getObjectTaggingBody(bucketName, key)
+
+    assertThat(body).contains("<Tagging")
+    assertThat(body).containsPattern("<TagSet\\s*/>|<TagSet\\s*>\\s*</TagSet>")
+  }
+
+  @Test
+  @S3VerifiedFailure(
+    year = 2026,
+    reason = "No credentials sent in plain HTTP request",
+  )
+  fun `GET ObjectTagging returns an empty TagSet element after DELETE`(testInfo: TestInfo) {
+    val key = UPLOAD_FILE_NAME
+    val (bucketName, _) = givenBucketAndObject(testInfo, key)
+
+    s3Client.putObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+      it.tagging {
+        it.tagSet(tag("tag1" to "foo"))
+      }
+    }
+    s3Client.deleteObjectTagging {
+      it.bucket(bucketName)
+      it.key(key)
+    }
+
+    val body = getObjectTaggingBody(bucketName, key)
+
+    assertThat(body).contains("<Tagging")
+    assertThat(body).containsPattern("<TagSet\\s*/>|<TagSet\\s*>\\s*</TagSet>")
   }
 
   @Test
@@ -168,6 +224,20 @@ internal class ObjectTaggingIT : S3TestBase() {
       tag1,
       tag2,
     )
+  }
+
+  private fun getObjectTaggingBody(
+    bucketName: String,
+    key: String,
+  ): String {
+    val request =
+      HttpRequest
+        .newBuilder(URI.create("$serviceEndpoint/$bucketName/$key?tagging"))
+        .GET()
+        .build()
+    val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+    assertThat(response.statusCode()).isEqualTo(200)
+    return response.body()
   }
 
   private fun tag(
