@@ -59,7 +59,19 @@ Configuration methods: `withInitialBuckets()`, `withValidKmsKeys()`, `withRetain
 
 ## TestNG Listener
 
-Configure in `testng.xml`:
+With Maven Surefire 3.6+, configure the listener as a Surefire provider property:
+```xml
+<properties>
+  <property>
+    <name>listener</name>
+    <value>com.adobe.testing.s3mock.testng.S3MockListener</value>
+  </property>
+</properties>
+```
+
+Create S3 clients in `@BeforeClass` or test methods, not field initializers, because the JUnit
+Platform TestNG engine may instantiate test classes during discovery. Other TestNG runners may
+continue to configure the listener in `testng.xml`:
 ```xml
 <listener class-name="com.adobe.testing.s3mock.testng.S3MockListener"/>
 ```

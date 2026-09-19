@@ -22,14 +22,13 @@ import software.amazon.awssdk.core.sync.RequestBody
 import java.io.File
 
 @Test
-class S3MockListenerXmlConfigurationTest {
-  private val s3Client = S3Mock.getInstance().createS3ClientV2()
-
+class S3MockListenerSurefireConfigurationTest {
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
    */
   @Test
   fun shouldUploadAndDownloadObject() {
+    val s3Client = S3Mock.getInstance().createS3ClientV2()
     val uploadFile = File(UPLOAD_FILE_NAME)
     val key = uploadFile.name
 
@@ -48,7 +47,7 @@ class S3MockListenerXmlConfigurationTest {
   }
 
   companion object {
-    private const val BUCKET_NAME = "s3-mock-listener-xml-configuration-test"
+    private const val BUCKET_NAME = "s3-mock-listener-surefire-configuration-test"
     private const val UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt"
   }
 }

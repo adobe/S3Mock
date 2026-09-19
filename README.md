@@ -427,7 +427,35 @@ See examples: [Declarative](testsupport/junit5/src/test/kotlin/com/adobe/testing
 </dependency>
 ```
 
-Configure in `testng.xml` - see [example configuration](testsupport/testng/src/test/resources/testng.xml).
+When using Maven Surefire 3.6 or newer, register the listener through the Surefire provider
+properties because `suiteXmlFiles` is no longer supported:
+
+```xml
+<plugin>
+  <artifactId>maven-surefire-plugin</artifactId>
+  <configuration>
+    <properties>
+      <property>
+        <name>listener</name>
+        <value>com.adobe.testing.s3mock.testng.S3MockListener</value>
+      </property>
+    </properties>
+  </configuration>
+</plugin>
+```
+
+Surefire 3.6 runs TestNG through the JUnit Platform and may instantiate test classes during
+discovery. Create S3 clients in a TestNG configuration method such as `@BeforeClass`, or in the test
+method itself, after the listener has started S3Mock. Do not create clients in constructors or field
+initializers.
+
+Other TestNG runners may continue to register the listener in `testng.xml`:
+
+```xml
+<listeners>
+  <listener class-name="com.adobe.testing.s3mock.testng.S3MockListener"/>
+</listeners>
+```
 
 ### AWS CLI
 

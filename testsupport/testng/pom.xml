@@ -67,9 +67,12 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <suiteXmlFiles>
-              <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
-            </suiteXmlFiles>
+            <properties>
+              <property>
+                <name>listener</name>
+                <value>com.adobe.testing.s3mock.testng.S3MockListener</value>
+              </property>
+            </properties>
           </configuration>
         </plugin>
       </plugins>
