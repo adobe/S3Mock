@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import org.testng.IExecutionListener
  * TestNG listener to start and stop the S3Mock Application. After the tests, the S3Mock is
  * stopped.
  *
- * <h2>Configuring through testng.xml file</h2>
+ * With Maven Surefire 3.6 or newer, configure the listener through the Surefire `listener` provider
+ * property. Other TestNG runners may configure the listener through a `testng.xml` file:
+ *
  * <pre>
  * `<?xml version="1.0" encoding="UTF-8"?>
  * <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
  * <suite name="TestNG Listener Example">
  * <listeners>
- * <listener class-name="com.adobe.testing.s3mock.testng.S3ExecutionListener" />
+ * <listener class-name="com.adobe.testing.s3mock.testng.S3MockListener" />
  * </listeners>
  *
  * <test name="TestNG Sample Test" preserve-order="true">
@@ -40,8 +42,12 @@ import org.testng.IExecutionListener
  * </classes>
  * </test>
  * </suite>
-` *
-</pre> *
+ * `
+ * </pre>
+ *
+ * When TestNG runs through the JUnit Platform, test classes may be instantiated during discovery.
+ * Create clients in TestNG configuration methods or test methods instead of constructors or field
+ * initializers.
  */
 class S3MockListener : IExecutionListener {
   override fun onExecutionStart() = S3Mock.getInstance().bootstrap()

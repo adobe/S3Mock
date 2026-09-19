@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.testng;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,12 +28,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Test
-public class S3MockListenerXmlConfigurationJavaTest {
+public class S3MockListenerSurefireConfigurationJavaTest {
 
-  private static final String BUCKET_NAME = "s3-mock-listener-xml-configuration-java-test";
+  private static final String BUCKET_NAME = "s3-mock-listener-surefire-configuration-java-test";
   private static final String UPLOAD_FILE_NAME = "src/test/resources/sampleFile.txt";
-
-  private final S3Client s3Client = S3Mock.getInstance().createS3ClientV2();
 
   /**
    * Creates a bucket, stores a file, downloads the file again and compares checksums.
@@ -43,6 +40,7 @@ public class S3MockListenerXmlConfigurationJavaTest {
    */
   @Test
   public void shouldUploadAndDownloadObject() throws Exception {
+    var s3Client = S3Mock.getInstance().createS3ClientV2();
     var uploadFile = new File(UPLOAD_FILE_NAME);
 
     s3Client.createBucket(CreateBucketRequest.builder().bucket(BUCKET_NAME).build());
