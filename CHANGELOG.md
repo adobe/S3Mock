@@ -9,6 +9,7 @@ Whenever a 3rd party library is updated, S3Mock will update its MINOR version.
   * [Planned changes](#planned-changes)
 * [CURRENT - 5.x - THIS VERSION IS UNDER ACTIVE DEVELOPMENT](#current---5x---this-version-is-under-active-development)
   * [5.3.0 - PLANNED](#530---planned)
+  * [5.2.3](#523)
   * [5.2.2](#522)
   * [5.2.1](#521)
   * [5.2.0](#520)
@@ -155,11 +156,34 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.3.0 - PLANNED
 
 * Features and fixes
-  * fix: `GetObjectTagging` now always returns a `Tagging` document with an empty `TagSet` when the object has no tags, instead of a `200` with no body. ([#3149](https://github.com/adobe/S3Mock/issues/3149))
+  * TBD
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
   * TBD
+
+## 5.2.3
+
+* Features and fixes
+  * fix: `GetObjectTagging` now always returns a `Tagging` document with an empty `TagSet` when the object has no tags, instead of a `200` with no body. ([#3149](https://github.com/adobe/S3Mock/issues/3149))
+  * fix: TestNG test support module now supports Maven Surefire 3.6+ and documented the required listener and client initialization configuration.
+  * fix: SBOM generation now uses new GitHub.com APIs
+* Version updates (deliverable dependencies)
+  * none
+* Version updates (build dependencies)
+  * Bump actions/setup-java from 6.0.0 to 6.0.1
+  * Bump docker/setup-buildx-action from 4.3.0 to 4.4.0
+  * Bump docker/setup-qemu-action from 4.3.0 to 4.4.0
+  * Bump github/codeql-action from 4.37.9 to 4.38.0
+  * Bump com.diffplug.spotless:spotless-maven-plugin from 3.10.0 to 3.10.2
+  * Bump com.puppycrawl.tools:checkstyle from 14.0.0 to 14.1.0
+  * Bump org.apache.maven.plugins:maven-compiler-plugin from 3.15.0 to 3.16.0
+  * Bump org.apache.maven.plugins:maven-deploy-plugin from 3.1.4 to 3.2.0
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.5.6 to 3.6.0
+  * Bump org.apache.maven.plugins:maven-install-plugin from 3.1.4 to 3.2.0
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.5.6 to 3.6.0
+  * Bump org.codehaus.mojo:build-helper-maven-plugin from 3.6.1 to 3.6.2
+  * Bump org.codehaus.mojo:exec-maven-plugin from 3.6.3 to 3.6.4
 
 ## 5.2.2
 
