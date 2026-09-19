@@ -22,11 +22,49 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: advanced-security/sbom-generator-action@6fe43abf522b2e7a19bc769aec1e6c848614b517 # v0.0.2
+      # advanced-security/sbom-generator-action is deprecated; the GitHub REST API's synchronous
+      # export endpoint is also deprecated (closing down 2026-11-13), so this uses the
+      # asynchronous generate-report/fetch-report flow instead. See:
+      # https://docs.github.com/en/rest/dependency-graph/sboms
+      - name: Request SBOM generation
+        id: sbom_request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sbom_url=$(gh api "/repos/${{ github.repository }}/dependency-graph/sbom/generate-report" --jq '.sbom_url')
+          if [ -z "${sbom_url}" ] || [ "${sbom_url}" = "null" ]; then
+            echo "Failed to request SBOM generation"
+            exit 1
+          fi
+          echo "sbom_url=${sbom_url}" >> "${GITHUB_OUTPUT}"
+      - name: Fetch generated SBOM
         id: sbom
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          SBOM_URL: ${{ steps.sbom_request.outputs.sbom_url }}
+        run: |
+          file_name="sbom.spdx.json"
+          # SBOM_URL is a path like /repos/OWNER/REPO/dependency-graph/sbom/fetch-report/UUID.
+          # While the report is still processing, the endpoint returns 202 with an empty JSON
+          # body ("{}"); `gh api` treats that as a successful 2xx response, so we must also
+          # verify the body actually contains the completed SBOM document before accepting it.
+          ready="false"
+          for attempt in $(seq 1 30); do
+            if gh api "${SBOM_URL}" > "${file_name}" 2>fetch.log && jq -e '.spdxVersion' "${file_name}" >/dev/null 2>&1; then
+              ready="true"
+              break
+            fi
+            echo "SBOM not ready yet (attempt ${attempt}), retrying in 10s..."
+            cat fetch.log
+            sleep 10
+          done
+          rm -f fetch.log
+          if [ "${ready}" != "true" ]; then
+            echo "Timed out waiting for SBOM generation"
+            exit 1
+          fi
+          echo "fileName=${file_name}" >> "${GITHUB_OUTPUT}"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: ${{steps.sbom.outputs.fileName }}
+          path: ${{ steps.sbom.outputs.fileName }}
           name: "SBOM"
