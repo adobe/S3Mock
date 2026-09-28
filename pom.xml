@@ -65,7 +65,7 @@
 
   <properties>
 
-    <archunit.version>1.5.0</archunit.version>
+    <archunit.version>1.5.1</archunit.version>
 
     <aws-kotlin.version>1.8.32</aws-kotlin.version>
 
