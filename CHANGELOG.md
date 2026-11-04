@@ -158,9 +158,27 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 * Features and fixes
   * TBD
 * Version updates (deliverable dependencies)
-  * TBD
+  * Bump aws.sdk.kotlin:s3-jvm from 1.8.32 to 1.9.29
+  * Bump org.jetbrains.kotlin:kotlin-bom from 2.4.10 to 2.4.21
+  * Bump org.springframework.boot:spring-boot-starter-parent from 4.1.1 to 4.1.2
+  * Bump software.amazon.awssdk:bom from 2.53.2 to 2.57.8
 * Version updates (build dependencies)
-  * TBD
+  * Bump com.diffplug.spotless:spotless-maven-plugin from 3.10.2 to 3.10.4
+  * Bump com.puppycrawl.tools:checkstyle from 14.1.0 to 14.4.0
+  * Bump com.tngtech.archunit:archunit-junit5 from 1.5.0 to 1.5.1
+  * Bump digital.pragmatech.testing:spring-test-profiler from 0.3.0 to 0.4.0
+  * Bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0
+  * Bump org.apache.maven.plugins:maven-enforcer-plugin from 3.6.3 to 3.7.0
+  * Bump org.apache.maven.plugins:maven-failsafe-plugin from 3.6.0 to 3.6.1
+  * Bump org.apache.maven.plugins:maven-surefire-plugin from 3.6.0 to 3.6.1
+  * Bump org.jacoco:jacoco-maven-plugin from 0.8.15 to 0.8.16
+  * Bump org.mockito.kotlin:mockito-kotlin from 6.3.0 to 6.4.0
+  * Bump org.sonatype.central:central-publishing-maven-plugin from 0.11.0 to 0.12.0
+  * Bump actions/setup-java from 6.0.1 to 6.1.0
+  * Bump actions/upload-artifact from 7.0.1 to 7.0.2
+  * Bump github/codeql-action from 4.38.0 to 4.39.1
+  * Bump ossf/scorecard-action from 2.4.4 to 2.5.0
+  * Bump step-security/harden-runner from 2.21.1 to 2.22.3
 
 ## 5.2.3
 
