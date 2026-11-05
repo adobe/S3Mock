@@ -212,29 +212,73 @@ open class BucketService(
     val bucket = bucketStore.getBucketMetadata(bucketName)
     val objectVersions = mutableListOf<ObjectVersion>()
     val deleteMarkers = mutableListOf<DeleteMarkerEntry>()
-    var nextVersionIdMarker: String? = null
+    val contents =
+      if (keyMarker != null && versionIdMarker != null) {
+        val markerContent =
+          bucket.getID(keyMarker)?.let { id ->
+            objectStore.getS3ObjectMetadata(bucket, id, null)?.toS3Object()
+          }
+        listOfNotNull(markerContent) + result.contents
+      } else {
+        result.contents
+      }
 
-    for (content in result.contents) {
-      if (nextVersionIdMarker != null) break
+    var isTruncated = result.isTruncated
+    var nextKeyMarker = result.nextMarker
+    var nextVersionIdMarker: String? = null
+    var entriesReturned = 0
+    var lastKeyMarker: String? = null
+    var lastVersionIdMarker: String? = null
+    var hasMoreEntries = false
+
+    for (content in contents) {
+      if (hasMoreEntries) break
 
       val id = bucket.getID(content.key) ?: continue
       if (bucket.isVersioningEnabled) {
         val s3ObjectVersions = objectStore.getS3ObjectVersions(bucket, id)
+        val versions = s3ObjectVersions.versions.reversed()
+        val firstVersionIndex =
+          if (content.key == keyMarker && versionIdMarker != null) {
+            versions.indexOf(versionIdMarker).let { if (it < 0) versions.size else it + 1 }
+          } else {
+            0
+          }
 
-        for (s3ObjectVersion in s3ObjectVersions.versions.reversed()) {
+        for (s3ObjectVersion in versions.drop(firstVersionIndex)) {
           val meta = objectStore.getS3ObjectMetadata(bucket, id, s3ObjectVersion) ?: continue
+          if (entriesReturned >= maxKeys) {
+            isTruncated = true
+            nextKeyMarker = lastKeyMarker
+            nextVersionIdMarker = lastVersionIdMarker
+            hasMoreEntries = true
+            break
+          }
+
           if (!meta.deleteMarker) {
-            if (objectVersions.size > maxKeys) {
-              nextVersionIdMarker = s3ObjectVersion
-              break
-            }
             objectVersions += meta.toObjectVersion(s3ObjectVersions.latestVersion == s3ObjectVersion)
           } else {
             deleteMarkers += meta.toDeleteMarkerEntry(s3ObjectVersions.latestVersion == s3ObjectVersion)
           }
+          entriesReturned++
+          lastKeyMarker = content.key
+          lastVersionIdMarker = s3ObjectVersion
         }
       } else {
-        objectVersions += ObjectVersion.from(content)
+        if (content.key == keyMarker && versionIdMarker != null) continue
+        if (entriesReturned >= maxKeys) {
+          isTruncated = true
+          nextKeyMarker = lastKeyMarker
+          nextVersionIdMarker = lastVersionIdMarker
+          hasMoreEntries = true
+          break
+        }
+
+        val objectVersion = ObjectVersion.from(content)
+        objectVersions += objectVersion
+        entriesReturned++
+        lastKeyMarker = content.key
+        lastVersionIdMarker = objectVersion.versionId
       }
     }
 
@@ -252,11 +296,11 @@ open class BucketService(
       returnDeleteMarkers,
       encodeUrlIfRequested(delimiter, encodingType),
       encodingType,
-      result.isTruncated,
+      isTruncated,
       encodeUrlIfRequested(keyMarker, encodingType),
       result.maxKeys,
       result.name,
-      encodeUrlIfRequested(result.nextMarker, encodingType),
+      encodeUrlIfRequested(nextKeyMarker, encodingType),
       encodeUrlIfRequested(nextVersionIdMarker, encodingType),
       encodeUrlIfRequested(result.prefix, encodingType),
       returnObjectVersions,

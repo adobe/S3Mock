@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.service
 
 import com.adobe.testing.s3mock.s3.S3Exception
@@ -25,6 +24,7 @@ import com.adobe.testing.s3mock.s3.dto.VersioningConfiguration
 import com.adobe.testing.s3mock.s3.dto.VersioningConfiguration.Status
 import com.adobe.testing.s3mock.s3.model.BucketMetadata
 import com.adobe.testing.s3mock.s3.model.S3ObjectMetadata
+import com.adobe.testing.s3mock.s3.model.S3ObjectVersions
 import com.adobe.testing.s3mock.s3.store.MultipartStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -803,6 +803,77 @@ internal class BucketServiceTest : ServiceTestBase() {
     // With versioning disabled, entries are mapped 1:1 without delete markers
     assertThat(out.deleteMarkers).isEmpty()
     assertThat(out.objectVersions).isNotEmpty()
+  }
+
+  @Test
+  fun testListVersions_paginatesAcrossVersionsAndDeleteMarkers() {
+    val bucketName = "bucket-versions-pagination"
+    val key = "versioned-key"
+    val bucketMetadata =
+      bucketMetadata(
+        bucketName,
+        metadataFrom(bucketName),
+        versioningConfiguration = VersioningConfiguration(null, Status.ENABLED),
+      )
+    val id = bucketMetadata.addKey(key)
+    val versions = S3ObjectVersions(id)
+    val olderVersion = versions.createVersion()
+    val newerVersion = versions.createVersion()
+    val deleteMarkerVersion = versions.createVersion()
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(bucketMetadata)
+    whenever(bucketStore.lookupIdsInBucket(null, bucketName)).thenReturn(listOf(id))
+    whenever(objectStore.getS3ObjectVersions(bucketMetadata, id)).thenReturn(versions)
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = deleteMarkerVersion, deleteMarker = true))
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, olderVersion))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = olderVersion))
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, newerVersion))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = newerVersion))
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, deleteMarkerVersion))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = deleteMarkerVersion, deleteMarker = true))
+
+    val firstPage = iut.listVersions(bucketName, null, null, null, 1, null, null)
+
+    assertThat(firstPage.objectVersions).isEmpty()
+    assertThat(firstPage.deleteMarkers).hasSize(1).extracting("versionId").containsExactly(deleteMarkerVersion)
+    assertThat(firstPage.isTruncated).isTrue()
+    assertThat(firstPage.nextKeyMarker).isEqualTo(key)
+    assertThat(firstPage.nextVersionIdMarker).isEqualTo(deleteMarkerVersion)
+
+    val secondPage =
+      iut.listVersions(
+        bucketName,
+        null,
+        null,
+        null,
+        1,
+        firstPage.nextKeyMarker,
+        firstPage.nextVersionIdMarker,
+      )
+
+    assertThat(secondPage.objectVersions).hasSize(1).extracting("versionId").containsExactly(newerVersion)
+    assertThat(secondPage.deleteMarkers).isEmpty()
+    assertThat(secondPage.isTruncated).isTrue()
+    assertThat(secondPage.nextKeyMarker).isEqualTo(key)
+    assertThat(secondPage.nextVersionIdMarker).isEqualTo(newerVersion)
+
+    val thirdPage =
+      iut.listVersions(
+        bucketName,
+        null,
+        null,
+        null,
+        1,
+        secondPage.nextKeyMarker,
+        secondPage.nextVersionIdMarker,
+      )
+
+    assertThat(thirdPage.objectVersions).hasSize(1).extracting("versionId").containsExactly(olderVersion)
+    assertThat(thirdPage.deleteMarkers).isEmpty()
+    assertThat(thirdPage.isTruncated).isFalse()
+    assertThat(thirdPage.nextKeyMarker).isNull()
+    assertThat(thirdPage.nextVersionIdMarker).isNull()
   }
 
   @Test
