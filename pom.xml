@@ -82,7 +82,7 @@
       registry itself.
     -->
     <docker.run.image.name>adobe/s3mock-run</docker.run.image.name>
-    <dokka-maven-plugin.version>2.2.0</dokka-maven-plugin.version>
+    <dokka-maven-plugin.version>2.3.0</dokka-maven-plugin.version>
     <exec-maven-plugin.version>3.7.0</exec-maven-plugin.version>
 
     <java.target.version>17</java.target.version>
