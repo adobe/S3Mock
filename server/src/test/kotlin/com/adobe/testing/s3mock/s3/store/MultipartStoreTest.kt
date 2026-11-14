@@ -111,6 +111,33 @@ internal class MultipartStoreTest : StoreTestBase() {
   }
 
   @Test
+  fun `createMultipartUpload uses a time-ordered upload ID matching the initiation time`() {
+    val bucket = metadataFrom(TEST_BUCKET_NAME)
+    val multipartUpload =
+      multipartStore.createMultipartUpload(
+        bucket,
+        "aFile",
+        managedId(),
+        DEFAULT_CONTENT_TYPE,
+        storeHeaders(),
+        TEST_OWNER,
+        TEST_INITIATOR,
+        NO_USER_METADATA,
+        NO_ENCRYPTION_HEADERS,
+        NO_TAGS,
+        StorageClass.STANDARD,
+        NO_CHECKSUMTYPE,
+        NO_CHECKSUM_ALGORITHM,
+      )
+    val uploadId = UUID.fromString(multipartUpload.uploadId)
+
+    assertThat(uploadId.version()).isEqualTo(7)
+    assertThat(uploadId.mostSignificantBits ushr 16).isEqualTo(multipartUpload.initiated!!.toEpochMilli())
+
+    multipartStore.abortMultipartUpload(bucket, uploadId)
+  }
+
+  @Test
   @Throws(IOException::class)
   fun `PUT part creates the correct set of folders and files`() {
     val fileName = "PartFile"

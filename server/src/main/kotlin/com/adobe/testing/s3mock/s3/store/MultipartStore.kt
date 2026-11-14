@@ -36,6 +36,7 @@ import com.adobe.testing.s3mock.s3.model.PartMetadata
 import com.adobe.testing.s3mock.s3.util.BoundedInputStream
 import com.adobe.testing.s3mock.s3.util.ChecksumUtil
 import com.adobe.testing.s3mock.s3.util.DigestUtil
+import com.adobe.testing.s3mock.s3.util.UuidUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpRange
@@ -75,7 +76,9 @@ open class MultipartStore(
     checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?,
   ): MultipartUpload {
-    val uploadId = UUID.randomUUID()
+    val initiated = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+    // Time-ordered, so listing uploads sorted by upload ID also sorts them by initiation time.
+    val uploadId = UuidUtil.uuidV7(initiated)
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error(
         "Directories for storing multipart uploads couldn't be created. id={}, uploadId={}",
@@ -100,7 +103,7 @@ open class MultipartStore(
       MultipartUpload(
         checksumAlgorithm,
         resolvedChecksumType,
-        Instant.now().truncatedTo(ChronoUnit.MILLIS),
+        initiated,
         initiator,
         key,
         owner,

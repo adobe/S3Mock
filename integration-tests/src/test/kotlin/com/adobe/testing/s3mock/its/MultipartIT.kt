@@ -1590,6 +1590,77 @@ internal class MultipartIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun `list MultipartUploads paginates through uploads on the same key`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val uploadIds =
+      (1..3).map {
+        s3Client
+          .createMultipartUpload {
+            it.bucket(bucketName)
+            it.key("key")
+          }.uploadId()
+      }
+
+    val listedUploadIds = mutableListOf<String>()
+    var keyMarker: String? = null
+    var uploadIdMarker: String? = null
+    do {
+      val page =
+        s3Client.listMultipartUploads {
+          it.bucket(bucketName)
+          it.maxUploads(1)
+          it.keyMarker(keyMarker)
+          it.uploadIdMarker(uploadIdMarker)
+        }
+      listedUploadIds += page.uploads().map { it.uploadId() }
+      keyMarker = page.nextKeyMarker()
+      uploadIdMarker = page.nextUploadIdMarker()
+    } while (page.isTruncated)
+
+    assertThat(listedUploadIds).containsExactlyInAnyOrderElementsOf(uploadIds)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `list MultipartUploads paginates through uploads on the same key while aborting them`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val uploadIds =
+      (1..3).map {
+        s3Client
+          .createMultipartUpload {
+            it.bucket(bucketName)
+            it.key("key")
+          }.uploadId()
+      }
+
+    val listedUploadIds = mutableListOf<String>()
+    var keyMarker: String? = null
+    var uploadIdMarker: String? = null
+    do {
+      val page =
+        s3Client.listMultipartUploads {
+          it.bucket(bucketName)
+          it.maxUploads(1)
+          it.keyMarker(keyMarker)
+          it.uploadIdMarker(uploadIdMarker)
+        }
+      page.uploads().forEach { upload ->
+        listedUploadIds += upload.uploadId()
+        s3Client.abortMultipartUpload {
+          it.bucket(bucketName)
+          it.key(upload.key())
+          it.uploadId(upload.uploadId())
+        }
+      }
+      keyMarker = page.nextKeyMarker()
+      uploadIdMarker = page.nextUploadIdMarker()
+    } while (page.isTruncated)
+
+    assertThat(listedUploadIds).containsExactlyInAnyOrderElementsOf(uploadIds)
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2026)
   fun `list MultipartUploads with max-uploads zero returns an empty page`(testInfo: TestInfo) {
     val bucketName = givenBucket(testInfo)
