@@ -49,19 +49,16 @@ open class MultipartService(
 ) : ServiceBase() {
   fun putPart(
     bucketName: String,
-    key: String,
     uploadId: UUID,
     partNumber: Int,
     path: Path,
     encryptionHeaders: Map<String, String>,
     checksum: String? = null,
     checksumAlgorithm: ChecksumAlgorithm? = null,
-  ): String? {
+  ): String {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uuid = bucketMetadata.getID(key) ?: return null
     return multipartStore.putPart(
       bucketMetadata,
-      uuid,
       uploadId,
       partNumber,
       path,
@@ -77,7 +74,6 @@ open class MultipartService(
     copyRange: HttpRange?,
     partNumber: Int,
     destinationBucket: String,
-    destinationKey: String,
     uploadId: UUID,
     encryptionHeaders: Map<String, String>,
     versionId: String?,
@@ -85,8 +81,6 @@ open class MultipartService(
     val sourceBucketMetadata = bucketStore.getBucketMetadata(bucketName)
     val destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucket)
     val sourceId = sourceBucketMetadata.getID(key) ?: return null
-    // source must be copied to destination
-    val destinationId = bucketStore.addKeyToBucket(destinationKey, destinationBucket)
     try {
       val partEtag =
         multipartStore.copyPart(
@@ -95,18 +89,15 @@ open class MultipartService(
           copyRange,
           partNumber,
           destinationBucketMetadata,
-          destinationId,
           uploadId,
           encryptionHeaders,
           versionId,
         )
       return CopyPartResult.from(Instant.now(), normalizeEtag(partEtag))
     } catch (e: Exception) {
-      // something went wrong with writing the destination file, clean up ID from BucketStore.
-      bucketStore.removeFromBucket(destinationKey, destinationBucket)
       throw IllegalStateException(
         "Could not copy part. sourceBucket=$sourceBucketMetadata, destinationBucket=$destinationBucketMetadata, " +
-          "key=$key, sourceId=$sourceId, destinationId=$destinationId, uploadId=$uploadId",
+          "key=$key, sourceId=$sourceId, uploadId=$uploadId",
         e,
       )
     }
@@ -118,12 +109,11 @@ open class MultipartService(
     maxParts: Int,
     partNumberMarker: Int?,
     uploadId: UUID,
-  ): ListPartsResult? {
+  ): ListPartsResult {
     verifyMaxParts(maxParts)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key) ?: return null
     val multipartUpload = multipartStore.getMultipartUpload(bucketMetadata, uploadId, false)
-    var parts = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
+    var parts = multipartStore.getMultipartUploadParts(bucketMetadata, uploadId)
 
     parts = filterBy(parts, Part::partNumber, partNumberMarker)
 
@@ -155,15 +145,10 @@ open class MultipartService(
 
   fun abortMultipartUpload(
     bucketName: String,
-    key: String,
     uploadId: UUID,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    try {
-      multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
-    } finally {
-      bucketStore.removeFromBucket(key, bucketName)
-    }
+    multipartStore.abortMultipartUpload(bucketMetadata, uploadId)
   }
 
   fun completeMultipartUpload(
@@ -176,24 +161,35 @@ open class MultipartService(
     checksum: String?,
     checksumType: ChecksumType?,
     checksumAlgorithm: ChecksumAlgorithm?,
-  ): CompleteMultipartUploadResult? {
+  ): CompleteMultipartUploadResult {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key) ?: return null
+    // The key is only added to the bucket once an upload completes, so that in-progress uploads
+    // don't share state with an existing object or other uploads with the same key.
+    val existingId = bucketMetadata.getID(key)
+    val id = existingId ?: bucketStore.addKeyToBucket(key, bucketName)
     val multipartUploadInfo = multipartStore.getMultipartUploadInfo(bucketMetadata, uploadId)
-    return multipartStore
-      .completeMultipartUpload(
-        bucketMetadata,
-        key,
-        id,
-        uploadId,
-        parts,
-        encryptionHeaders,
-        multipartUploadInfo,
-        location,
-        checksum,
-        checksumType,
-        checksumAlgorithm,
-      )
+    try {
+      return multipartStore
+        .completeMultipartUpload(
+          bucketMetadata,
+          key,
+          id,
+          uploadId,
+          parts,
+          encryptionHeaders,
+          multipartUploadInfo,
+          location,
+          checksum,
+          checksumType,
+          checksumAlgorithm,
+        )
+    } catch (e: Exception) {
+      // Remove the key, but only if this call added it.
+      if (existingId == null) {
+        bucketStore.removeFromBucket(key, bucketName)
+      }
+      throw e
+    }
   }
 
   fun createMultipartUpload(
@@ -226,14 +222,12 @@ open class MultipartService(
       }
     }
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketStore.addKeyToBucket(key, bucketName)
 
     try {
       val multipartUpload =
         multipartStore.createMultipartUpload(
           bucketMetadata,
           key,
-          id,
           contentType,
           storeHeaders,
           owner,
@@ -247,9 +241,7 @@ open class MultipartService(
         )
       return InitiateMultipartUploadResult(bucketName, key, multipartUpload.uploadId)
     } catch (e: Exception) {
-      // something went wrong with writing the destination file, clean up ID from BucketStore.
-      bucketStore.removeFromBucket(key, bucketName)
-      throw IllegalStateException("Could not prepare Multipart Upload. bucket=$bucketMetadata, key=$key, id=$id", e)
+      throw IllegalStateException("Could not prepare Multipart Upload. bucket=$bucketMetadata, key=$key", e)
     }
   }
 
@@ -345,19 +337,18 @@ open class MultipartService(
     requestedParts: List<CompletedPart>,
   ) {
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val id = bucketMetadata.getID(key) ?: throw S3Exception.INVALID_PART
-    verifyMultipartParts(bucketName, id, uploadId)
+    verifyMultipartParts(bucketName, uploadId)
 
-    val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
+    val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, uploadId)
     val uploadedPartsMap: Map<Int, String?> = uploadedParts.associate { it.partNumber to it.etag }
 
     var prevPartNumber = 0
     for (part in requestedParts) {
       if (!uploadedPartsMap.containsKey(part.partNumber) || uploadedPartsMap[part.partNumber] != part.etag) {
         LOG.error(
-          "Multipart part not valid. bucket={}, id={}, uploadId={}, partNumber={}",
+          "Multipart part not valid. bucket={}, key={}, uploadId={}, partNumber={}",
           bucketMetadata,
-          id,
+          key,
           uploadId,
           part.partNumber,
         )
@@ -365,9 +356,9 @@ open class MultipartService(
       }
       if (part.partNumber < prevPartNumber) {
         LOG.error(
-          "Multipart parts order invalid. bucket={}, id={}, uploadId={}, partNumber={}",
+          "Multipart parts order invalid. bucket={}, key={}, uploadId={}, partNumber={}",
           bucketMetadata,
-          id,
+          key,
           uploadId,
           part.partNumber,
         )
@@ -380,19 +371,17 @@ open class MultipartService(
   @Throws(S3Exception::class)
   fun verifyMultipartParts(
     bucketName: String,
-    id: UUID,
     uploadId: UUID,
   ) {
     verifyMultipartUploadExists(bucketName, uploadId)
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
-    val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, id, uploadId)
+    val uploadedParts: List<Part> = multipartStore.getMultipartUploadParts(bucketMetadata, uploadId)
     for (part in uploadedParts.dropLast(1)) {
       verifyPartNumberLimits(part.partNumber.toString())
       if (part.size < MINIMUM_PART_SIZE) {
         LOG.error(
-          "Multipart part size too small. bucket={}, id={}, uploadId={}, size={}",
+          "Multipart part size too small. bucket={}, uploadId={}, size={}",
           bucketMetadata,
-          id,
           uploadId,
           part.size,
         )
