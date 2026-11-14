@@ -156,7 +156,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.3.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * fix: `ListMultipartUploads` pagination no longer skips uploads when several uploads share a key. Upload IDs are now time-ordered (UUIDv7).
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)

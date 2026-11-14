@@ -269,14 +269,21 @@ open class MultipartService(
     val normalizedPrefix = prefix ?: ""
 
     val bucketMetadata = bucketStore.getBucketMetadata(bucketName)
+    // Upload IDs are time-ordered, so this sorts uploads on a key by initiation time.
     var contents =
       multipartStore
         .listMultipartUploads(bucketMetadata, prefix)
         .filter { it.key.startsWith(normalizedPrefix) }
-        .sortedBy(MultipartUpload::key)
-        .toList()
+        .sortedWith(compareBy(MultipartUpload::key, MultipartUpload::uploadId))
 
-    contents = filterBy(contents, MultipartUpload::key, keyMarker)
+    // Only keep keys after the key marker. Also filter on uploadId if uploadIdMarker was passed.
+    if (keyMarker != null) {
+      contents =
+        contents.filter {
+          it.key > keyMarker ||
+            (it.key == keyMarker && uploadIdMarker != null && it.uploadId.orEmpty() > uploadIdMarker)
+        }
+    }
 
     val commonPrefixes =
       collapseCommonPrefixes(

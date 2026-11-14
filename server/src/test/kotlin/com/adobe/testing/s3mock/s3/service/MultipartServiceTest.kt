@@ -161,6 +161,66 @@ internal class MultipartServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun `listMultipartUploads sorts uploads by key, then by upload ID`() {
+    val bucketName = "bucketName"
+    val bucketMetadata = givenBucket(bucketName)
+    val second = givenUpload("key", "b")
+    val first = givenUpload("key", "a")
+    val other = givenUpload("a-key", "c")
+    whenever(multipartStore.listMultipartUploads(bucketMetadata, null)).thenReturn(listOf(second, first, other))
+
+    val result = iut.listMultipartUploads(bucketName, null, null, null, 1000, null, null)
+
+    assertThat(result.multipartUploads).containsExactly(other, first, second)
+  }
+
+  @Test
+  fun `listMultipartUploads continues after the upload ID marker on the same key`() {
+    val bucketName = "bucketName"
+    val bucketMetadata = givenBucket(bucketName)
+    val first = givenUpload("key", "a")
+    val second = givenUpload("key", "b")
+    val third = givenUpload("key", "c")
+    whenever(multipartStore.listMultipartUploads(bucketMetadata, null)).thenReturn(listOf(first, second, third))
+
+    val page1 = iut.listMultipartUploads(bucketName, null, null, null, 1, null, null)
+    val page2 =
+      iut.listMultipartUploads(bucketName, null, null, page1.nextKeyMarker, 1000, null, page1.nextUploadIdMarker)
+
+    assertThat(page1.multipartUploads).containsExactly(first)
+    assertThat(page1.isTruncated).isTrue
+    assertThat(page2.multipartUploads).containsExactly(second, third)
+  }
+
+  @Test
+  fun `listMultipartUploads continues after an upload ID marker that no longer exists`() {
+    val bucketName = "bucketName"
+    val bucketMetadata = givenBucket(bucketName)
+    val before = givenUpload("key", "a")
+    val after = givenUpload("key", "c")
+    val nextKey = givenUpload("key2", "a")
+    whenever(multipartStore.listMultipartUploads(bucketMetadata, null)).thenReturn(listOf(before, after, nextKey))
+
+    val result = iut.listMultipartUploads(bucketName, null, null, "key", 1000, null, "b")
+
+    assertThat(result.multipartUploads).containsExactly(after, nextKey)
+  }
+
+  private fun givenUpload(
+    key: String,
+    uploadId: String,
+  ) = MultipartUpload(
+    null,
+    null,
+    Instant.now(),
+    Initiator.DEFAULT_INITIATOR,
+    key,
+    Owner.DEFAULT_OWNER,
+    StorageClass.STANDARD,
+    uploadId,
+  )
+
+  @Test
   fun testVerifyMultipartParts_withRequestedParts_success() {
     val bucketName = "bucketName"
     val key = "key"
