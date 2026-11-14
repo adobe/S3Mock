@@ -1170,7 +1170,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
     val temp = Files.createTempFile("junie", "part")
     whenever(multipartService.toTempFile(any(), any())).thenReturn(Pair(temp, null))
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
     ).thenReturn("etag-123")
 
     val uri =
@@ -1221,7 +1221,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
         any(),
         anyOrNull(),
         eq(1),
-        any(),
         any(),
         any(),
         any<Map<String, String>>(),
@@ -1413,7 +1412,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
         eq(1),
         any(),
         any(),
-        any(),
         any<Map<String, String>>(),
         any<String>(),
       ),
@@ -1461,7 +1459,6 @@ internal class MultipartControllerTest : BaseControllerTest() {
         anyOrNull(),
         eq(1),
         eq(TEST_BUCKET_NAME),
-        eq("dest/key.txt"),
         eq(uploadId),
         eq(mapOf("x-amz-server-side-encryption" to "AES256")),
         anyOrNull<String>(),
@@ -1512,7 +1509,7 @@ internal class MultipartControllerTest : BaseControllerTest() {
       }
 
     whenever(
-      multipartService.putPart(eq(TEST_BUCKET_NAME), eq("my/key.txt"), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
+      multipartService.putPart(eq(TEST_BUCKET_NAME), eq(uploadId), eq(1), eq(temp), any(), anyOrNull(), anyOrNull()),
     ).thenReturn("etag-321")
 
     val uri =

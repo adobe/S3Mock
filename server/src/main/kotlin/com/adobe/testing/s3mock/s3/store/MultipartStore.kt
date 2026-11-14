@@ -63,7 +63,6 @@ open class MultipartStore(
   fun createMultipartUpload(
     bucket: BucketMetadata,
     key: String,
-    id: UUID,
     contentType: String?,
     storeHeaders: Map<String, String>,
     owner: Owner,
@@ -78,8 +77,8 @@ open class MultipartStore(
     val uploadId = UUID.randomUUID()
     if (!createPartsFolder(bucket, uploadId)) {
       LOG.error(
-        "Directories for storing multipart uploads couldn't be created. id={}, uploadId={}",
-        id,
+        "Directories for storing multipart uploads couldn't be created. key={}, uploadId={}",
+        key,
         uploadId,
       )
       throw IllegalStateException(
@@ -181,7 +180,6 @@ open class MultipartStore(
 
   fun putPart(
     bucket: BucketMetadata,
-    id: UUID,
     uploadId: UUID,
     partNumber: Int,
     path: Path,
@@ -299,7 +297,6 @@ open class MultipartStore(
 
   fun getMultipartUploadParts(
     bucket: BucketMetadata,
-    id: UUID,
     uploadId: UUID,
   ): List<Part> {
     val partsPath = getPartsFolder(bucket, uploadId)
@@ -325,7 +322,7 @@ open class MultipartStore(
           .toList()
       }
     } catch (e: IOException) {
-      throw IllegalStateException("Could not read all parts. bucket=$bucket, id=$id, uploadId=$uploadId", e)
+      throw IllegalStateException("Could not read all parts. bucket=$bucket, uploadId=$uploadId", e)
     }
   }
 
@@ -335,18 +332,17 @@ open class MultipartStore(
     copyRange: HttpRange?,
     partNumber: Int,
     destinationBucket: BucketMetadata,
-    destinationId: UUID,
     uploadId: UUID,
     encryptionHeaders: Map<String, String>?,
     versionId: String?,
   ): String {
-    verifyMultipartUploadPreparation(destinationBucket, destinationId, uploadId)
+    verifyMultipartUploadPreparation(destinationBucket, uploadId)
 
     return copyPartToFile(
       bucket,
       id,
       copyRange,
-      createPartFile(destinationBucket, destinationId, uploadId, partNumber),
+      createPartFile(destinationBucket, uploadId, partNumber),
       versionId,
     )
   }
@@ -389,7 +385,6 @@ open class MultipartStore(
 
   private fun createPartFile(
     bucket: BucketMetadata,
-    id: UUID,
     uploadId: UUID,
     partNumber: Int,
   ): File {
@@ -402,11 +397,11 @@ open class MultipartStore(
 
     try {
       check(partFile.exists() || partFile.createNewFile()) {
-        "Could not create buffer file. bucket=$bucket, id=$id, uploadId=$uploadId, partNumber=$partNumber"
+        "Could not create buffer file. bucket=$bucket, uploadId=$uploadId, partNumber=$partNumber"
       }
     } catch (e: IOException) {
       throw IllegalStateException(
-        "Could not create buffer file. bucket=$bucket, id=$id, uploadId=$uploadId, partNumber=$partNumber",
+        "Could not create buffer file. bucket=$bucket, uploadId=$uploadId, partNumber=$partNumber",
         e,
       )
     }
@@ -473,19 +468,17 @@ open class MultipartStore(
 
   private fun verifyMultipartUploadPreparation(
     bucket: BucketMetadata,
-    id: UUID?,
     uploadId: UUID,
   ) {
     val multipartUploadInfo = getMultipartUploadInfo(bucket, uploadId)
-    val partsFolder = id?.let { getPartsFolder(bucket, uploadId) }
+    val partsFolder = getPartsFolder(bucket, uploadId)
 
     check(
       multipartUploadInfo != null &&
-        partsFolder != null &&
         partsFolder.exists() &&
         partsFolder.isDirectory(),
     ) {
-      "Multipart Request was not prepared. bucket=$bucket, id=$id, uploadId=$uploadId, partsFolder=$partsFolder"
+      "Multipart Request was not prepared. bucket=$bucket, uploadId=$uploadId, partsFolder=$partsFolder"
     }
   }
 

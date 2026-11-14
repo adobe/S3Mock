@@ -1697,6 +1697,132 @@ internal class MultipartIT : S3TestBase() {
       .isEqualTo("NoSuchUpload")
   }
 
+  @Test
+  @S3VerifiedTodo
+  fun `abort multipart upload keeps other uploads on the same key`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val key = randomName
+    val abortedUploadId =
+      s3Client
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(key)
+        }.uploadId()
+    val uploadId =
+      s3Client
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(key)
+        }.uploadId()
+    val randomBytes = randomBytes()
+    val partETag = uploadPart(bucketName, key, uploadId, 1, randomBytes)
+
+    s3Client.abortMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(abortedUploadId)
+    }
+
+    s3Client
+      .listParts {
+        it.bucket(bucketName)
+        it.key(key)
+        it.uploadId(uploadId)
+      }.parts()
+      .also {
+        assertThat(it).hasSize(1)
+        assertThat(it[0].eTag()).isEqualTo(partETag)
+      }
+
+    s3Client.completeMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(uploadId)
+      it.multipartUpload {
+        it.parts({
+          it.eTag(partETag)
+          it.partNumber(1)
+        })
+      }
+    }
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.use {
+        assertThat(readStreamIntoByteArray(it.buffered())).isEqualTo(randomBytes)
+      }
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `abort multipart upload keeps existing object on the same key`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val key = randomName
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+      },
+      RequestBody.fromString("existing"),
+    )
+    val uploadId =
+      s3Client
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(key)
+        }.uploadId()
+
+    s3Client.abortMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(uploadId)
+    }
+
+    s3Client
+      .getObject {
+        it.bucket(bucketName)
+        it.key(key)
+      }.use {
+        assertThat(readStreamIntoByteArray(it.buffered()).decodeToString()).isEqualTo("existing")
+      }
+    assertThat(
+      s3Client
+        .listObjectsV2 {
+          it.bucket(bucketName)
+        }.contents()
+        .map { it.key() },
+    ).containsExactly(key)
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `bucket can be deleted after aborting the only multipart upload`(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val key = randomName
+    val uploadId =
+      s3Client
+        .createMultipartUpload {
+          it.bucket(bucketName)
+          it.key(key)
+        }.uploadId()
+
+    s3Client.abortMultipartUpload {
+      it.bucket(bucketName)
+      it.key(key)
+      it.uploadId(uploadId)
+    }
+
+    assertThat(
+      s3Client
+        .listObjectsV2 {
+          it.bucket(bucketName)
+        }.contents(),
+    ).isEmpty()
+    s3Client.deleteBucket { it.bucket(bucketName) }
+  }
+
   /**
    * Tests if the parts specified in CompleteUploadRequest are adhered
    * irrespective of the number of parts uploaded before.

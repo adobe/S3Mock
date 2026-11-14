@@ -171,7 +171,7 @@ class MultipartController(
   ): ResponseEntity<Void> {
     bucketService.verifyBucketExists(bucketName)
     multipartService.verifyMultipartUploadExists(bucketName, uploadId)
-    multipartService.abortMultipartUpload(bucketName, key.key, uploadId)
+    multipartService.abortMultipartUpload(bucketName, uploadId)
     return ResponseEntity.noContent().build()
   }
 
@@ -253,7 +253,6 @@ class MultipartController(
       val etag =
         multipartService.putPart(
           bucketName,
-          key.key,
           uploadId,
           partNum,
           tempFile,
@@ -331,7 +330,6 @@ class MultipartController(
         copyRange,
         partNum,
         bucketName,
-        key.key,
         uploadId,
         encryptionHeaders,
         copySource.versionId,
@@ -462,7 +460,7 @@ class MultipartController(
           checksumFrom(httpHeaders),
           checksumTypeFrom(httpHeaders),
           checksumAlgorithmFromHeader(httpHeaders),
-        ) ?: throw S3Exception.NO_SUCH_UPLOAD_MULTIPART
+        )
       } else {
         CompleteMultipartUploadResult.from(
           locationWithEncodedKey,
