@@ -39,6 +39,7 @@ import com.adobe.testing.s3mock.s3.util.DigestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
@@ -534,6 +535,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<Map<String, String>>(),
         isA<Map<String, String>>(),
         isNull(),
+        isNull(),
       ),
     ).thenReturn(copiedMeta)
 
@@ -575,6 +577,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<Map<String, String>>(),
         isA<Map<String, String>>(),
         isA<Map<String, String>>(),
+        isNull(),
         isNull(),
       ),
     ).thenReturn(null)
@@ -867,6 +870,7 @@ internal class ObjectControllerTest : BaseControllerTest() {
         isA<Map<String, String>>(),
         isA<Map<String, String>>(),
         isNull(),
+        isNull(),
       ),
     ).thenReturn(copied)
 
@@ -902,6 +906,89 @@ internal class ObjectControllerTest : BaseControllerTest() {
       isA<Map<String, String>>(),
       isA<Map<String, String>>(),
       isNull(),
+      isNull(),
+    )
+  }
+
+  @Test
+  fun testCopyObject_TaggingDirectiveReplace_UsesRequestTags() {
+    givenCopySource()
+    val tags = listOf(Tag("k1", "v1"), Tag("k2", "v2"))
+
+    mockMvc
+      .perform(
+        put("/$TEST_BUCKET_NAME/b.txt")
+          .accept(MediaType.APPLICATION_XML)
+          .header(AwsHttpHeaders.X_AMZ_COPY_SOURCE, "/src-bucket/a.txt")
+          .header(AwsHttpHeaders.X_AMZ_TAGGING_DIRECTIVE, "REPLACE")
+          .header(AwsHttpHeaders.X_AMZ_TAGGING, "k1=v1&k2=v2"),
+      ).andExpect(status().isOk)
+
+    verifyCopyObjectTags(tags)
+  }
+
+  @Test
+  fun testCopyObject_TaggingDirectiveReplace_WithoutTagging_RemovesTags() {
+    givenCopySource()
+
+    mockMvc
+      .perform(
+        put("/$TEST_BUCKET_NAME/b.txt")
+          .accept(MediaType.APPLICATION_XML)
+          .header(AwsHttpHeaders.X_AMZ_COPY_SOURCE, "/src-bucket/a.txt")
+          .header(AwsHttpHeaders.X_AMZ_TAGGING_DIRECTIVE, "REPLACE"),
+      ).andExpect(status().isOk)
+
+    verifyCopyObjectTags(emptyList())
+  }
+
+  @Test
+  fun testCopyObject_TaggingDirectiveDefault_IgnoresRequestTags() {
+    givenCopySource()
+
+    mockMvc
+      .perform(
+        put("/$TEST_BUCKET_NAME/b.txt")
+          .accept(MediaType.APPLICATION_XML)
+          .header(AwsHttpHeaders.X_AMZ_COPY_SOURCE, "/src-bucket/a.txt")
+          .header(AwsHttpHeaders.X_AMZ_TAGGING, "k1=v1"),
+      ).andExpect(status().isOk)
+
+    verifyCopyObjectTags(null)
+  }
+
+  private fun givenCopySource() {
+    whenever(bucketService.verifyBucketExists(TEST_BUCKET_NAME)).thenReturn(TEST_BUCKETMETADATA)
+    whenever(bucketService.verifyBucketExists("src-bucket")).thenReturn(TEST_BUCKETMETADATA)
+    whenever(objectService.verifyObjectExists("src-bucket", "a.txt", null)).thenReturn(s3ObjectMetadata("a.txt"))
+    whenever(
+      objectService.copyObject(
+        eq("src-bucket"),
+        eq("a.txt"),
+        isNull(),
+        eq(TEST_BUCKET_NAME),
+        eq("b.txt"),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isA<Map<String, String>>(),
+        isNull(),
+        anyOrNull(),
+      ),
+    ).thenReturn(s3ObjectMetadata("b.txt"))
+  }
+
+  private fun verifyCopyObjectTags(tags: List<Tag>?) {
+    verify(objectService).copyObject(
+      eq("src-bucket"),
+      eq("a.txt"),
+      isNull(),
+      eq(TEST_BUCKET_NAME),
+      eq("b.txt"),
+      isA<Map<String, String>>(),
+      isA<Map<String, String>>(),
+      isA<Map<String, String>>(),
+      isNull(),
+      eq(tags),
     )
   }
 

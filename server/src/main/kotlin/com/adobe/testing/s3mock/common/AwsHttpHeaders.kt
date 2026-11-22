@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.common
 
 import com.fasterxml.jackson.annotation.JsonValue
@@ -51,6 +50,7 @@ object AwsHttpHeaders {
 
   const val X_AMZ_CONTENT_SHA256: String = "x-amz-content-sha256"
   const val X_AMZ_TAGGING: String = "x-amz-tagging"
+  const val X_AMZ_TAGGING_DIRECTIVE: String = "x-amz-tagging-directive"
   const val CONTENT_MD5: String = "Content-MD5"
 
   const val X_AMZ_VERSION_ID: String = "x-amz-version-id"
@@ -86,6 +86,21 @@ object AwsHttpHeaders {
    * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html)
    */
   enum class MetadataDirective(
+    private val value: String,
+  ) {
+    COPY("COPY"),
+    REPLACE("REPLACE"),
+    ;
+
+    @JsonValue
+    override fun toString(): String = this.value
+  }
+
+  /**
+   * This enum declares values of the optional "x-amz-tagging-directive" header.
+   * [API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html)
+   */
+  enum class TaggingDirective(
     private val value: String,
   ) {
     COPY("COPY"),
