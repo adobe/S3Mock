@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.its
 
 import com.adobe.testing.s3mock.s3.S3Exception.Companion.PRECONDITION_FAILED
@@ -30,6 +29,7 @@ import software.amazon.awssdk.services.s3.model.MetadataDirective
 import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.model.StorageClass
+import software.amazon.awssdk.services.s3.model.TaggingDirective
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
@@ -515,6 +515,47 @@ internal class CopyObjectIT : S3TestBase() {
   }
 
   @Test
+  @S3VerifiedTodo
+  fun `copy object succeeds with new tags`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+    givenObjectWithTags(bucketName, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey/withNewTags"
+
+    s3Client.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+      it.tagging("new-key=new-value")
+      it.taggingDirective(TaggingDirective.REPLACE)
+    }
+
+    assertThat(tagsOf(destinationBucketName, destinationKey)).containsExactly("new-key" to "new-value")
+    assertThat(tagsOf(bucketName, sourceKey)).containsExactly("test-key" to "test-value")
+  }
+
+  @Test
+  @S3VerifiedTodo
+  fun `copy object succeeds with source tags`(testInfo: TestInfo) {
+    val sourceKey = UPLOAD_FILE_NAME
+    val bucketName = givenBucket(testInfo)
+    givenObjectWithTags(bucketName, sourceKey)
+    val destinationBucketName = givenBucket()
+    val destinationKey = "copyOf/$sourceKey/withSourceTags"
+
+    s3Client.copyObject {
+      it.sourceBucket(bucketName)
+      it.sourceKey(sourceKey)
+      it.destinationBucket(destinationBucketName)
+      it.destinationKey(destinationKey)
+    }
+
+    assertThat(tagsOf(destinationBucketName, destinationKey)).containsExactly("test-key" to "test-value")
+  }
+
+  @Test
   @S3VerifiedSuccess(year = 2025)
   fun `copy object succeeds with new storageclass`(testInfo: TestInfo) {
     val sourceKey = UPLOAD_FILE_NAME
@@ -698,4 +739,29 @@ internal class CopyObjectIT : S3TestBase() {
         assertThat(it.response().copyObjectResult().eTag()).isEqualTo(upload.response().eTag())
       }
   }
+
+  private fun givenObjectWithTags(
+    bucketName: String,
+    key: String,
+  ) {
+    s3Client.putObject(
+      {
+        it.bucket(bucketName)
+        it.key(key)
+        it.tagging("test-key=test-value")
+      },
+      RequestBody.fromFile(UPLOAD_FILE),
+    )
+  }
+
+  private fun tagsOf(
+    bucketName: String,
+    key: String,
+  ): List<Pair<String, String>> =
+    s3Client
+      .getObjectTagging {
+        it.bucket(bucketName)
+        it.key(key)
+      }.tagSet()
+      .map { it.key() to it.value() }
 }

@@ -19,6 +19,7 @@ import com.adobe.testing.s3mock.common.AwsHttpHeaders.CONTENT_MD5
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.MetadataDirective
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.NOT_X_AMZ_COPY_SOURCE
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.RANGE
+import com.adobe.testing.s3mock.common.AwsHttpHeaders.TaggingDirective
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_CHECKSUM_MODE
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_COPY_SOURCE
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_COPY_SOURCE_IF_MATCH
@@ -32,6 +33,7 @@ import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_METADATA_DIRECTIVE
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_OBJECT_SIZE
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_STORAGE_CLASS
 import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_TAGGING
+import com.adobe.testing.s3mock.common.AwsHttpHeaders.X_AMZ_TAGGING_DIRECTIVE
 import com.adobe.testing.s3mock.common.S3Verified
 import com.adobe.testing.s3mock.s3.S3Exception
 import com.adobe.testing.s3mock.s3.dto.ChecksumMode
@@ -463,6 +465,8 @@ class ObjectController(
     @PathVariable key: ObjectKey,
     @RequestHeader(value = X_AMZ_COPY_SOURCE) copySource: CopySource,
     @RequestHeader(value = X_AMZ_METADATA_DIRECTIVE, defaultValue = "COPY") metadataDirective: MetadataDirective,
+    @RequestHeader(value = X_AMZ_TAGGING_DIRECTIVE, defaultValue = "COPY") taggingDirective: TaggingDirective,
+    @RequestHeader(value = X_AMZ_TAGGING, required = false) tags: List<Tag>?,
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MATCH, required = false) match: List<String>?,
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_NONE_MATCH, required = false) noneMatch: List<String>?,
     @RequestHeader(value = X_AMZ_COPY_SOURCE_IF_MODIFIED_SINCE, required = false) ifModifiedSince: List<Instant>?,
@@ -488,6 +492,9 @@ class ObjectController(
         emptyMap<String, String>() to emptyMap()
       }
 
+    // with REPLACE, the tags of the request replace the tags of the source object, without x-amz-tagging there are none
+    val copyTags = if (TaggingDirective.REPLACE == taggingDirective) tags.orEmpty() else null
+
     val copyS3ObjectMetadata =
       objectService.copyObject(
         copySource.bucket,
@@ -499,6 +506,7 @@ class ObjectController(
         storeHeaders,
         userMetadata,
         storageClass,
+        copyTags,
       )
 
     if (copyS3ObjectMetadata == null) {

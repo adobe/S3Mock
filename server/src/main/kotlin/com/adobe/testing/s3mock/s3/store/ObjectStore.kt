@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.s3.store
 
 import com.adobe.testing.s3mock.common.AwsHttpHeaders
@@ -246,6 +245,7 @@ open class ObjectStore(
     storeHeaders: Map<String, String>?,
     userMetadata: Map<String, String>?,
     storageClass: StorageClass?,
+    tags: List<Tag>?,
   ): S3ObjectMetadata? {
     val sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId) ?: return null
     synchronized(lockFor(sourceId)) {
@@ -259,7 +259,7 @@ open class ObjectStore(
         userMetadata?.takeIf { it.isNotEmpty() } ?: sourceObject.userMetadata,
         encryptionHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.encryptionHeaders,
         null,
-        sourceObject.tags,
+        tags ?: sourceObject.tags,
         sourceObject.checksumAlgorithm,
         sourceObject.checksum,
         sourceObject.owner,
@@ -282,6 +282,7 @@ open class ObjectStore(
     storeHeaders: Map<String, String>?,
     userMetadata: Map<String, String>?,
     storageClass: StorageClass?,
+    tags: List<Tag>?,
   ): S3ObjectMetadata? {
     val sourceObject = getS3ObjectMetadata(sourceBucket, sourceId, versionId) ?: return null
 
@@ -294,6 +295,7 @@ open class ObjectStore(
         encryptionHeaders = encryptionHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.encryptionHeaders,
         storeHeaders = storeHeaders?.takeIf { it.isNotEmpty() } ?: sourceObject.storeHeaders,
         storageClass = storageClass ?: sourceObject.storageClass,
+        tags = tags ?: sourceObject.tags,
       )
     writeMetafile(sourceBucket, s3ObjectMetadata)
     return s3ObjectMetadata

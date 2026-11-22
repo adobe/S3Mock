@@ -156,7 +156,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.3.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * fix: `CopyObject` now applies `x-amz-tagging-directive: REPLACE` and stores the tags from `x-amz-tagging`, instead of always copying the tags of the source object. ([#3186](https://github.com/adobe/S3Mock/issues/3186))
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)

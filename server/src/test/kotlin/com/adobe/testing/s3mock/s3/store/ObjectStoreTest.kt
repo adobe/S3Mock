@@ -257,6 +257,7 @@ internal class ObjectStoreTest : StoreTestBase() {
       emptyMap(),
       NO_USER_METADATA,
       StorageClass.STANDARD_IA,
+      null,
     )
 
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
@@ -297,11 +298,85 @@ internal class ObjectStoreTest : StoreTestBase() {
       emptyMap(),
       NO_USER_METADATA,
       StorageClass.STANDARD_IA,
+      null,
     )
     objectStore.getS3ObjectMetadata(metadataFrom(destinationBucketName), destinationId, null).also {
       assertThat(it!!.encryptionHeaders).isEqualTo(encryptionHeaders())
       assertThat(it.size).isEqualTo(sourceFile.length().toString())
       assertThat(it.etag).isEqualTo(DigestUtil.hexDigest(TEST_ENC_KEY, path.inputStream()))
+    }
+  }
+
+  @Test
+  fun testStoreAndCopyObject_ReplacesTags() {
+    val sourceId = managedId()
+    val destinationId = managedId()
+    val sourceFile = File(TEST_FILE_PATH)
+    val sourceBucketMetadata = metadataFrom("sourceBucket")
+    val destinationBucketMetadata = metadataFrom("destinationBucket")
+
+    givenStoredS3ObjectMetadata(
+      sourceId,
+      sourceFile.name,
+      sourceFile.toPath(),
+      bucketMetadata = sourceBucketMetadata,
+      tags = listOf(Tag("foo", "bar")),
+    )
+
+    objectStore.copyObject(
+      sourceBucketMetadata,
+      sourceId,
+      null,
+      destinationBucketMetadata,
+      destinationId,
+      "destinationObject",
+      emptyMap(),
+      emptyMap(),
+      NO_USER_METADATA,
+      null,
+      listOf(Tag("new", "tag")),
+    )
+
+    objectStore.getS3ObjectMetadata(destinationBucketMetadata, destinationId, null).also {
+      assertThat(it!!.tags).containsExactly(Tag("new", "tag"))
+    }
+    objectStore.getS3ObjectMetadata(sourceBucketMetadata, sourceId, null).also {
+      assertThat(it!!.tags).containsExactly(Tag("foo", "bar"))
+    }
+  }
+
+  @Test
+  fun testStoreAndCopyObject_KeepsSourceTags() {
+    val sourceId = managedId()
+    val destinationId = managedId()
+    val sourceFile = File(TEST_FILE_PATH)
+    val sourceBucketMetadata = metadataFrom("sourceBucket")
+    val destinationBucketMetadata = metadataFrom("destinationBucket")
+
+    givenStoredS3ObjectMetadata(
+      sourceId,
+      sourceFile.name,
+      sourceFile.toPath(),
+      bucketMetadata = sourceBucketMetadata,
+      tags = listOf(Tag("foo", "bar")),
+    )
+
+    objectStore.copyObject(
+      sourceBucketMetadata,
+      sourceId,
+      null,
+      destinationBucketMetadata,
+      destinationId,
+      "destinationObject",
+      emptyMap(),
+      emptyMap(),
+      NO_USER_METADATA,
+      null,
+      null,
+    )
+
+    objectStore.getS3ObjectMetadata(destinationBucketMetadata, destinationId, null).also {
+      assertThat(it!!.tags).containsExactly(Tag("foo", "bar"))
     }
   }
 
@@ -380,8 +455,37 @@ internal class ObjectStoreTest : StoreTestBase() {
         null,
         null,
         null,
+        null,
       )
     }.isSameAs(S3Exception.INVALID_COPY_REQUEST_SAME_KEY)
+  }
+
+  @Test
+  fun pretendToCopy_with_tags_replaces_tags() {
+    val sourceFile = File(TEST_FILE_PATH)
+    val id = managedId()
+    val bucket = metadataFrom("bucket-pretend")
+
+    givenStoredS3ObjectMetadata(
+      id,
+      sourceFile.name,
+      sourceFile.toPath(),
+      bucketMetadata = bucket,
+      tags = listOf(Tag("foo", "bar")),
+    )
+
+    objectStore.pretendToCopyObject(
+      bucket,
+      id,
+      null,
+      null,
+      null,
+      null,
+      StorageClass.STANDARD_IA,
+      listOf(Tag("new", "tag")),
+    )
+
+    assertThat(objectStore.getS3ObjectMetadata(bucket, id, null)!!.tags).containsExactly(Tag("new", "tag"))
   }
 
   @Test
@@ -413,6 +517,7 @@ internal class ObjectStoreTest : StoreTestBase() {
         newStoreHeaders,
         newUserMetadata,
         newStorageClass,
+        null,
       )!!
 
     // Verify fields changed accordingly

@@ -57,6 +57,7 @@ open class ObjectService(
     storeHeaders: Map<String, String>,
     userMetadata: Map<String, String>,
     storageClass: StorageClass?,
+    tags: List<Tag>?,
   ): S3ObjectMetadata? {
     val sourceBucketMetadata = bucketStore.getBucketMetadata(sourceBucketName)
     val destinationBucketMetadata = bucketStore.getBucketMetadata(destinationBucketName)
@@ -72,6 +73,7 @@ open class ObjectService(
         storeHeaders,
         userMetadata,
         storageClass,
+        tags,
       )
     }
 
@@ -89,6 +91,7 @@ open class ObjectService(
         storeHeaders,
         userMetadata,
         storageClass,
+        tags,
       )
     } catch (e: Exception) {
       // something went wrong with writing the destination file, clean up ID from BucketStore.
