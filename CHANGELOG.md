@@ -156,7 +156,7 @@ Version 5.x is JDK17 LTS bytecode compatible, with Docker and JUnit / direct Jav
 ## 5.3.0 - PLANNED
 
 * Features and fixes
-  * TBD
+  * Fix `ListObjectVersions` pagination so `max-keys` counts object versions and delete markers together and the next page resumes after the returned key and version ID markers.
 * Version updates (deliverable dependencies)
   * TBD
 * Version updates (build dependencies)
