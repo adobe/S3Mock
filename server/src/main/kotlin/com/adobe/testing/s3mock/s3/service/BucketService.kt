@@ -213,7 +213,13 @@ open class BucketService(
     val objectVersions = mutableListOf<ObjectVersion>()
     val deleteMarkers = mutableListOf<DeleteMarkerEntry>()
     val contents =
-      if (keyMarker != null && versionIdMarker != null) {
+      if (
+        maxKeys > 0 &&
+        keyMarker != null &&
+        versionIdMarker != null &&
+        keyMarker.startsWith(prefix.orEmpty()) &&
+        collapseCommonPrefixes(prefix, delimiter, listOf(keyMarker)) { it }.isEmpty()
+      ) {
         val markerContent =
           bucket.getID(keyMarker)?.let { id ->
             objectStore.getS3ObjectMetadata(bucket, id, null)?.toS3Object()

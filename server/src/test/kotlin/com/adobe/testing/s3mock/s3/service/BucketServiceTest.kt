@@ -877,6 +877,56 @@ internal class BucketServiceTest : ServiceTestBase() {
   }
 
   @Test
+  fun testListVersions_zeroLimitExcludesContinuationKey() {
+    assertEmptyVersionContinuation(0, null, null)
+  }
+
+  @Test
+  fun testListVersions_prefixMismatchExcludesContinuationKey() {
+    assertEmptyVersionContinuation(1, "other/", null)
+  }
+
+  @Test
+  fun testListVersions_delimiterExcludesCollapsedContinuationKey() {
+    assertEmptyVersionContinuation(1, "folder/", "/")
+  }
+
+  private fun assertEmptyVersionContinuation(
+    maxKeys: Int,
+    prefix: String?,
+    delimiter: String?,
+  ) {
+    val bucketName = "bucket-versions-continuation"
+    val key = "folder/nested/object"
+    val bucketMetadata =
+      bucketMetadata(
+        bucketName,
+        metadataFrom(bucketName),
+        versioningConfiguration = VersioningConfiguration(null, Status.ENABLED),
+      )
+    val id = bucketMetadata.addKey(key)
+    val versions = S3ObjectVersions(id)
+    val olderVersion = versions.createVersion()
+    val newerVersion = versions.createVersion()
+
+    whenever(bucketStore.getBucketMetadata(bucketName)).thenReturn(bucketMetadata)
+    whenever(bucketStore.lookupIdsInBucket(prefix, bucketName))
+      .thenReturn(if (key.startsWith(prefix.orEmpty())) listOf(id) else emptyList())
+    whenever(objectStore.getS3ObjectVersions(bucketMetadata, id)).thenReturn(versions)
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, null))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = newerVersion))
+    whenever(objectStore.getS3ObjectMetadata(bucketMetadata, id, olderVersion))
+      .thenReturn(s3ObjectMetadata(id, key).copy(versionId = olderVersion))
+
+    val result = iut.listVersions(bucketName, prefix, delimiter, null, maxKeys, key, newerVersion)
+
+    assertThat(result.objectVersions).isEmpty()
+    assertThat(result.deleteMarkers).isEmpty()
+    assertThat(result.isTruncated).isFalse()
+    assertThat(result.nextVersionIdMarker).isNull()
+  }
+
+  @Test
   fun testListVersions_withSpecialCharactersInKey_urlEncoding() {
     val bucketName = "bucket-special-chars"
     val specialKey = "file=name\$Dollar;Semicolon&Ampersand@At:Colon     Space,Comma?Question-mark"
