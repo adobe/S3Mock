@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017-2025 Adobe.
+ *  Copyright 2017-2026 Adobe.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package com.adobe.testing.s3mock.its
 
 import org.assertj.core.api.Assertions.assertThat
@@ -202,5 +201,83 @@ internal class ListObjectVersionsIT : S3TestBase() {
           .extracting("key")
           .containsExactly("$UPLOAD_FILE_NAME-3")
       }
+  }
+
+  @Test
+  @S3VerifiedSuccess(year = 2025)
+  fun listObjectVersions_paginatesVersionsAndDeleteMarkers(testInfo: TestInfo) {
+    val bucketName = givenBucket(testInfo)
+    val key = "versioned-object"
+    s3Client.putBucketVersioning {
+      it.bucket(bucketName)
+      it.versioningConfiguration {
+        it.status(BucketVersioningStatus.ENABLED)
+      }
+    }
+
+    val olderVersion =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(key)
+          },
+          RequestBody.fromString("older-version"),
+        ).versionId()
+    val newerVersion =
+      s3Client
+        .putObject(
+          {
+            it.bucket(bucketName)
+            it.key(key)
+          },
+          RequestBody.fromString("newer-version"),
+        ).versionId()
+    val deleteMarker =
+      s3Client
+        .deleteObject {
+          it.bucket(bucketName)
+          it.key(key)
+        }.versionId()
+
+    val firstPage =
+      s3Client.listObjectVersions {
+        it.bucket(bucketName)
+        it.maxKeys(1)
+      }
+
+    assertThat(firstPage.isTruncated).isTrue()
+    assertThat(firstPage.versions()).isEmpty()
+    assertThat(firstPage.deleteMarkers()).hasSize(1).extracting("versionId").containsExactly(deleteMarker)
+    assertThat(firstPage.nextKeyMarker()).isEqualTo(key)
+    assertThat(firstPage.nextVersionIdMarker()).isEqualTo(deleteMarker)
+
+    val secondPage =
+      s3Client.listObjectVersions {
+        it.bucket(bucketName)
+        it.maxKeys(1)
+        it.keyMarker(requireNotNull(firstPage.nextKeyMarker()))
+        it.versionIdMarker(requireNotNull(firstPage.nextVersionIdMarker()))
+      }
+
+    assertThat(secondPage.isTruncated).isTrue()
+    assertThat(secondPage.versions()).hasSize(1).extracting("versionId").containsExactly(newerVersion)
+    assertThat(secondPage.deleteMarkers()).isEmpty()
+    assertThat(secondPage.nextKeyMarker()).isEqualTo(key)
+    assertThat(secondPage.nextVersionIdMarker()).isEqualTo(newerVersion)
+
+    val thirdPage =
+      s3Client.listObjectVersions {
+        it.bucket(bucketName)
+        it.maxKeys(1)
+        it.keyMarker(requireNotNull(secondPage.nextKeyMarker()))
+        it.versionIdMarker(requireNotNull(secondPage.nextVersionIdMarker()))
+      }
+
+    assertThat(thirdPage.isTruncated).isFalse()
+    assertThat(thirdPage.versions()).hasSize(1).extracting("versionId").containsExactly(olderVersion)
+    assertThat(thirdPage.deleteMarkers()).isEmpty()
+    assertThat(thirdPage.nextKeyMarker()).isNull()
+    assertThat(thirdPage.nextVersionIdMarker()).isNull()
   }
 }
